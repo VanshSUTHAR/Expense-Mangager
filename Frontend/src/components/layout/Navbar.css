@@ -83,6 +83,23 @@
   min-width: 0;
 }
 
+.user-wrap {
+  position: relative;
+}
+
+.user-info-button {
+  border: 1px solid var(--border);
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: 12px;
+}
+
+.user-info-button:hover {
+  background: var(--surface-soft);
+}
+
 .notification-wrap {
   position: relative;
 }
@@ -245,6 +262,18 @@
   min-width: 0;
 }
 
+.user-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #111827;
+  color: #fff;
+  font-weight: 800;
+  flex: 0 0 auto;
+}
+
 .user-info > div:last-child {
   min-width: 0;
 }
@@ -275,6 +304,85 @@
   color: var(--red);
   border-color: #fecaca;
   background: #fef2f2;
+}
+
+.user-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(320px, calc(100vw - 24px));
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
+  z-index: 60;
+}
+
+.user-popover-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.user-popover-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: #111827;
+  color: #fff;
+  font-weight: 800;
+}
+
+.user-popover-body {
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.user-popover-name {
+  color: #111827;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.user-popover-email {
+  color: #6b7280;
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.user-popover-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.user-popover-meta span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.user-popover-footer {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  background: #ffffff;
+  color: #1f2937;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 11px 14px;
+  text-align: center;
 }
 
 @media (max-width: 1120px) {

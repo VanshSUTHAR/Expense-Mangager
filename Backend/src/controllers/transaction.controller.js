@@ -1,6 +1,7 @@
 const Transaction = require('../models/Transaction');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const { syncCreditCardStatements } = require('./creditCardBill.controller');
 
 // @GET /api/transactions
 const getTransactions = async (req, res) => {
@@ -88,6 +89,7 @@ const getTransactions = async (req, res) => {
     }
 
     const transaction = await Transaction.create(payload);
+    await syncCreditCardStatements(req.user._id);
 
     // Budget Alert
     const user = await User.findById(req.user._id);
@@ -174,6 +176,8 @@ const updateTransaction = async (req, res) => {
       });
     }
 
+    await syncCreditCardStatements(req.user._id);
+
     res.json({ success: true, transaction });
 
   } catch (error) {
@@ -196,6 +200,8 @@ const deleteTransaction = async (req, res) => {
         message: 'Transaction not found'
       });
     }
+
+    await syncCreditCardStatements(req.user._id);
 
     res.json({ success: true, message: 'Transaction deleted' });
 

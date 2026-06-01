@@ -153,10 +153,10 @@ h3 {
   background: #111827;
   color: #fff;
 }
-
+/* 
 .btn-primary:hover {
   background: #1f2937;
-}
+} */
 
 .btn-secondary {
   background: #fff;
@@ -450,6 +450,255 @@ h3 {
   overflow-x: auto;
 }
 
+.credit-card-bills-card {
+  margin-bottom: 18px;
+}
+
+.credit-card-bills-card .section-header h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0;
+}
+
+.credit-period-note {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.credit-bill-columns {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.credit-bill-group {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 0 280px;
+  min-width: 280px;
+}
+
+.credit-bill-group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.credit-bill-group-title strong {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text);
+}
+
+.credit-bill-empty,
+.credit-bill-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  padding: 12px;
+}
+
+.credit-bill-empty {
+  color: var(--muted);
+  text-align: center;
+}
+
+.credit-bill-list {
+  display: grid;
+  gap: 10px;
+}
+
+.credit-bill-item.status-overdue {
+  border-color: #fecaca;
+  background: #fff7f7;
+}
+
+.credit-bill-item.status-paid {
+  border-color: #bbf7d0;
+  background: #f7fff9;
+}
+
+.credit-bill-item.status-emi {
+  border-color: #c7d2fe;
+  background: #f8fbff;
+}
+
+.credit-bill-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.credit-bill-card-name {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.credit-bill-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.credit-bill-amount {
+  margin-top: 10px;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.credit-bill-days,
+.credit-bill-overdue {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.credit-bill-days {
+  color: var(--blue);
+}
+
+.credit-bill-overdue {
+  color: var(--red);
+}
+
+.credit-bill-status {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.credit-bill-status.status-pending {
+  background: #eff6ff;
+  color: var(--blue);
+}
+
+.credit-bill-status.status-overdue {
+  background: #fef2f2;
+  color: var(--red);
+}
+
+.credit-bill-status.status-paid {
+  background: #ecfdf5;
+  color: var(--green);
+}
+
+.credit-bill-status.status-emi {
+  background: #eef2ff;
+  color: var(--blue);
+}
+
+.credit-bill-pay-btn {
+  width: 100%;
+  margin-top: 10px;
+  min-height: 36px;
+}
+
+.credit-bill-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.credit-bill-toggle-btn {
+  width: 100%;
+  margin-top: 10px;
+  min-height: 36px;
+}
+
+.credit-bill-viewall-btn {
+  width: 100%;
+  margin-top: 10px;
+  min-height: 36px;
+}
+
+.credit-bill-accordion {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #f9fafb;
+  border: 1px solid var(--border);
+}
+
+.credit-bill-transaction {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid rgba(229, 231, 235, 0.9);
+}
+
+.credit-bill-transaction-title {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.credit-bill-emi-note {
+  margin-top: 8px;
+}
+
+.credit-emi-summary {
+  display: grid;
+  gap: 8px;
+  padding: 4px 0 14px;
+  color: var(--text);
+}
+
+.emi-term-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.emi-term-btn {
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.emi-term-btn.active {
+  border-color: var(--blue);
+  background: #eff6ff;
+  color: var(--blue);
+}
+
+.credit-emi-calculation {
+  padding: 12px;
+  border-radius: 10px;
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
 .tx-table {
   width: 100%;
   border-collapse: collapse;
@@ -522,7 +771,8 @@ h3 {
   border: 1px solid var(--border);
   border-radius: 6px;
   background: #fff;
-  color: var(--muted);
+  /* color: var(--muted); */
+  color:black;
 }
 
 .delete-btn {
@@ -780,6 +1030,481 @@ h3 {
   font-weight: 700;
 }
 
+.budget-hint {
+  font-size: 12px;
+  color: #7a86b6;
+  margin-top: 6px;
+}
+.settings-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* Make the first card (Profile) span both rows so other cards stack on the right */
+.settings-two-col > .settings-card:first-child {
+  grid-row: span 2;
+}
+
+.no-banks {
+  text-align: center;
+  color: #7a86b6;
+  font-size: 13px;
+  padding: 20px;
+  background: #f5f7ff;
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+
+.budget-hint {
+  font-size: 12px;
+  color: #7a86b6;
+  margin-top: 6px;
+}
+
+@media (max-width: 768px) {
+  .settings-two-col { grid-template-columns: 1fr; }
+}
+
+
+.settings-page {
+  padding: 24px;
+}
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 1fr 450px;
+  gap: 24px;
+  align-items: start;
+}
+
+.settings-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.profile-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  background: #0f172a;
+  color: white;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  height: 48px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 0 14px;
+}
+
+.save-btn {
+  width: 100%;
+  margin-top: 20px;
+}
+
+/* RIGHT SIDE */
+
+.bank-card {
+  min-height: 100%;
+}
+
+.bank-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.bank-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bank-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.delete-bank-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.add-bank-box {
+  margin-top: 20px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 20px;
+}
+
+.bank-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bank-form input {
+  width: 100%;
+  height: 46px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 0 12px;
+}
+
+.add-bank-btn {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
+
+.loans-page {
+  padding: 24px;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.page-sub {
+  color: #6b7280;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+ 
+.loan-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.loan-sum-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: none;
+}
+
+.loan-sum-card:hover {
+  transform: none;
+}
+
+.sum-label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.sum-value {
+  margin-top: 8px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+}
+
+ 
+.loans-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.loan-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: none;
+  transition: 0.2s;
+}
+
+.loan-card:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+}
+
+.completed-loan {
+  opacity: 0.8;
+  border-color: #10b981;
+}
+
+ 
+.loan-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+/* Position edit/delete action buttons at top-right of the card */
+.loan-card-header {
+  position: relative;
+}
+.loan-title-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.loan-card-header .action-btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  margin: 0;
+}
+.loan-card-header .action-btn.edit-btn {
+  right: 52px;
+}
+.loan-card-header .action-btn.delete-btn {
+  right: 12px;
+}
+
+.loan-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loan-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.loan-category {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+ 
+.loan-amounts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.loan-amt-item span {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.loan-amt-item strong {
+  font-size: 14px;
+  color: #111827;
+}
+
+/* EMI */
+
+.loan-emi-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.emi-amount {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* Progress */
+
+.loan-progress-bar {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.loan-progress-fill {
+  height: 100%;
+  background: #3b82f6;
+}
+
+.loan-progress-pct {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+ 
+.btn {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background: #111827;
+  color: white;
+  border: none;
+}
+
+.btn-secondary {
+  background: white;
+  color: #111827;
+}
+
+.pay-emi-btn {
+  width: 100%;
+}
+
+ 
+.loan-completed-badge {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  text-align: center;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Modal */
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.loan-emi-row-highlight { background: #fef9ee !important; }
+
+.loan-emi-badge {
+  display: inline-flex; align-items: center;
+  background: #fef3c7; color: #d97706;
+  font-size: 11px; font-weight: 700;
+  padding: 2px 8px; border-radius: 20px;
+}
+
+.loan-title-small {
+  font-size: 11px; color: #7a86b6; margin-top: 2px;
+}
+
+
+.loans-bank-filter {
+  display: flex; align-items: center; gap: 12px;
+  background: white; border-radius: 16px;
+  padding: 14px 20px; margin-bottom: 24px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+  /* border-left: 4px solid #6c8cff; */
+}
+
+.bank-filter-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 700; color: #3a4a7a;
+  white-space: nowrap;
+}
+
+.bank-filter-select { max-width: 280px; }
+
+.loan-bank-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; color: #6c8cff; font-weight: 600;
+  margin-top: 3px;
+}
+
+
+
+
+@media (max-width: 992px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+  }
+}
+  .charts-grid,
+  .credit-bill-columns { grid-template-columns: 1fr; }
+
+
+
+
 @media (max-width: 980px) {
   .main-content {
     padding: 22px;
@@ -793,6 +1518,16 @@ h3 {
 
   .charts-grid {
     grid-template-columns: 1fr;
+  }
+
+  .credit-bill-columns {
+    flex-direction: column;
+    overflow-x: visible;
+  }
+
+  .credit-bill-group {
+    min-width: 0;
+    flex-basis: auto;
   }
 }
 

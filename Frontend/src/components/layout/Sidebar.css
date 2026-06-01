@@ -1,0 +1,142 @@
+/* .sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 24px 14px;
+  border-width: 0 1px 0 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px 24px;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #111827;
+  color: #fff;
+}
+
+.sidebar-brand {
+  letter-spacing: 0;
+}
+
+.sidebar-nav {
+  display: grid;
+  gap: 3px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  border-radius: 7px;
+  padding: 10px 12px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.nav-item:hover {
+  background: var(--surface-soft);
+  color: var(--text);
+}
+
+.nav-item.active {
+  background: #111827;
+  color: #fff;
+}
+
+.nav-icon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin-bottom: 12px;
+}
+
+.user-info > div:last-child {
+  min-width: 0;
+}
+
+.user-name,
+.user-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logout-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.logout-btn:hover {
+  color: var(--red);
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+@media (max-width: 980px) {
+  .sidebar {
+    position: static;
+    height: auto;
+    padding: 12px;
+    border-width: 0 0 1px;
+  }
+
+  .sidebar-logo {
+    padding: 0 4px 12px;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .nav-item {
+    flex: 0 0 auto;
+  }
+
+  .sidebar-footer {
+    display: none;
+  }
+} */

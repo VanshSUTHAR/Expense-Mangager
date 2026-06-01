@@ -2,6 +2,19 @@ import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
+import {
+  FaUtensils,
+  FaCar,
+  FaShoppingBag,
+  FaHeartbeat,
+  FaFilm,
+  FaBriefcase,
+  FaChartLine,
+  FaHome,
+  FaLightbulb,
+  FaBook,
+  FaCreditCard,
+} from 'react-icons/fa';
 import './Dashboard.css';
 
 const COLORS = ['#f953c6', '#4facfe', '#43e97b', '#fee140', '#a18cd1', '#f77062'];
@@ -51,10 +64,10 @@ export default function Dashboard() {
           <h1>Good {getGreeting()}, {user?.name?.split(' ')[0]}! </h1>
           <p className="page-sub">Here's your financial overview</p>
         </div>
+        <a href="/transactions" className="btn btn-primary">+ Add Transaction</a>
       </div>
 
-      {/* Stats Cards */}
-      <div className="stats-grid">
+       <div className="stats-grid">
         <div className="stat-card stat-balance">
           <div>
             <div className="stat-label">Net Balance</div>
@@ -89,8 +102,7 @@ export default function Dashboard() {
       </div>
 
       <div className="charts-grid">
-        {/* Trend Chart */}
-        <div className="card chart-card">
+         <div className="card chart-card">
           <h3>6-Month Trend</h3>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={trendData}>
@@ -113,8 +125,7 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Category Pie */}
-        <div className="card chart-card">
+         <div className="card chart-card">
           <h3>Spending by Category</h3>
           {stats?.categoryStats?.length > 0 ? (
             <>
@@ -145,8 +156,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Recent Transactions */}
-      <div className="card">
+       <div className="card">
         <div className="section-header">
           <h3>Recent Transactions</h3>
           <a href="/transactions" className="btn btn-secondary" style={{ padding: '8px 16px', fontSize: '13px' }}>View All</a>
@@ -192,6 +202,18 @@ function processTrend(data) {
 }
 
 function getCategoryIcon(cat) {
-  const icons = { food: '🍔', transport: '🚗', shopping: '🛍️', health: '💊', entertainment: '🎬', salary: '💼', business: '📊', rent: '🏠', utilities: '💡', education: '📚' };
-  return icons[cat?.toLowerCase()] || '💳';
+  const icons = {
+    food: <FaUtensils />,
+    transport: <FaCar />,
+    shopping: <FaShoppingBag />,
+    health: <FaHeartbeat />,
+    entertainment: <FaFilm />,
+    salary: <FaBriefcase />,
+    business: <FaChartLine />,
+    rent: <FaHome />,
+    utilities: <FaLightbulb />,
+    education: <FaBook />,
+  };
+
+  return icons[cat?.toLowerCase()] || <FaCreditCard />;
 }
