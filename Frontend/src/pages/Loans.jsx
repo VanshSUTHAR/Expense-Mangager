@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import api from "../utils/api";
 import toast from "react-hot-toast";
 import swal from "sweetalert";
 import {
   FaCar, FaHome, FaBriefcase, FaCheckCircle,
-  FaUniversity, FaCalculator, FaPlus, FaEdit
+  FaUniversity, FaCalculator, FaPlus, FaEdit, FaWallet
 } from "react-icons/fa";
 import { MdSchool } from "react-icons/md";
 import { GiTakeMyMoney, GiPartyPopper } from "react-icons/gi";
 import { IoClose } from "react-icons/io5";
+import "./Loans.css";
+
+const LOW_BALANCE_THRESHOLD = 5000;
 
 const CATEGORY_ICONS = {
   car: <FaCar />,
@@ -30,6 +34,387 @@ const getLoanEMI = (loan) => {
   return custom > 0 ? custom : calculateEMI(loan.principalAmount, loan.interestRate, loan.tenureYears);
 };
 
+const getEMIDueInfo = (loan) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dueDay = loan.emiDueDay || 5;
+  const lastPaid = loan.lastEMIPaidAt ? new Date(loan.lastEMIPaidAt) : null;
+  const currentMonthPaid = lastPaid &&
+    lastPaid.getMonth() === today.getMonth() &&
+    lastPaid.getFullYear() === today.getFullYear();
+
+  let nextDueDate;
+  if (currentMonthPaid) {
+    nextDueDate = new Date(today.getFullYear(), today.getMonth() + 1, dueDay);
+  } else {
+    nextDueDate = new Date(today.getFullYear(), today.getMonth(), dueDay);
+  }
+
+  const daysRemaining = Math.floor((nextDueDate - today) / (1000 * 60 * 60 * 24));
+  let status;
+  if (currentMonthPaid) status = 'Paid';
+  else if (daysRemaining < 0) status = 'Overdue';
+  else if (daysRemaining === 0) status = 'Due Today';
+  else status = 'Pending';
+
+  return { nextDueDate, daysRemaining, status };
+};
+
+// ─── Pay EMI Modal ───────────────────────────────────────────────────────────
+function PayEMIModal({ loan, bankAccounts, debitCards, onClose, onSuccess }) {
+  const emiAmount = Math.round(getLoanEMI(loan));
+  const { nextDueDate, status: dueStatus } = getEMIDueInfo(loan);
+
+  const [selectedType, setSelectedType] = useState(""); // "bank" | "debit"
+  const [selectedId, setSelectedId] = useState("");
+  const [paying, setPaying] = useState(false);
+
+  const selectedAccount = selectedType === "bank"
+    ? bankAccounts.find(b => b._id === selectedId)
+    : debitCards.find(c => c._id === selectedId);
+
+  const availableBalance = selectedType === "bank"
+    ? selectedAccount?.balance ?? null
+    : selectedAccount?.linkedBankAccount?.balance ?? null;
+
+  const bankName = selectedType === "bank"
+    ? selectedAccount?.bankName
+    : selectedAccount?.linkedBankAccount?.bankName;
+
+  const remainingAfter = availableBalance !== null ? availableBalance - emiAmount : null;
+  const isInsufficient = availableBalance !== null && emiAmount > availableBalance;
+  const isLowAfter = remainingAfter !== null && remainingAfter >= 0 && remainingAfter < LOW_BALANCE_THRESHOLD;
+
+  const handleSourceChange = (e) => {
+    const [type, id] = e.target.value.split("|");
+    setSelectedType(type);
+    setSelectedId(id);
+  };
+
+  const handlePay = async () => {
+    if (!selectedId) {
+      toast.error("Please select a payment account.");
+      return;
+    }
+    if (isInsufficient) {
+      toast.error(`Insufficient Balance for this EMI payment. Account has only ₹${Number(availableBalance).toLocaleString("en-IN")}.`);
+      return;
+    }
+
+    setPaying(true);
+    try {
+      const payload = selectedType === "bank"
+        ? { bankAccountId: selectedId }
+        : { debitCardId: selectedId };
+
+      await api.post(`/loans/${loan._id}/pay-emi`, payload);
+
+      toast.success(
+        `EMI of ₹${emiAmount.toLocaleString("en-IN")} paid from ${bankName}!`,
+        { style: { background: "#ecfdf5", color: "#065f46" } }
+      );
+
+      if (isLowAfter) {
+        setTimeout(() => {
+          toast(`Low Balance Warning: Only ₹${remainingAfter.toLocaleString("en-IN")} remaining in ${bankName}.`,
+            { style: { background: "#fff7ed", color: "#92400e" }, icon: "⚠️" });
+        }, 800);
+      }
+
+      onSuccess();
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "EMI payment failed.", { style: { background: "#fef2f2", color: "#991b1b" } });
+    } finally {
+      setPaying(false);
+    }
+  };
+
+  return createPortal(
+    <div className="modal-overlay loan-modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal fade-in emi-pay-modal">
+        <div className="modal-header">
+          <h3>Pay EMI — {loan.title}</h3>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        {/* EMI Info */}
+        <div className="emi-info-grid">
+          <div className="emi-info-item">
+            <span>EMI Amount</span>
+            <strong className="emi-info-amount">₹{emiAmount.toLocaleString("en-IN")}</strong>
+          </div>
+          <div className="emi-info-item">
+            <span>Due Date</span>
+            <strong>{nextDueDate.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</strong>
+          </div>
+          <div className="emi-info-item">
+            <span>Status</span>
+            <span className={`emi-due-badge emi-due-${dueStatus.toLowerCase().replace(" ", "-")}`}>{dueStatus}</span>
+          </div>
+          <div className="emi-info-item">
+            <span>Progress</span>
+            <strong>{loan.paidEMIs}/{loan.tenureYears * 12} EMIs</strong>
+          </div>
+        </div>
+
+        {/* Account selector */}
+        <div className="form-group" style={{ marginTop: 16 }}>
+          <label>Pay From</label>
+          <select className="input" value={selectedType && selectedId ? `${selectedType}|${selectedId}` : ""}
+            onChange={handleSourceChange}>
+            <option value="">— Select Account / Debit Card —</option>
+            {bankAccounts.length > 0 && (
+              <optgroup label="Bank Accounts">
+                {bankAccounts.map(b => (
+                  <option key={b._id} value={`bank|${b._id}`}>
+                    {b.bankName} ••••{b.accountNumber.slice(-4)} — Balance: ₹{Number(b.balance).toLocaleString("en-IN")}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {debitCards.length > 0 && (
+              <optgroup label="Debit Cards">
+                {debitCards.map(c => (
+                  <option key={c._id} value={`debit|${c._id}`}>
+                    {c.cardName} ••••{c.cardNumber.slice(-4)} → {c.linkedBankAccount?.bankName} — Balance: ₹{Number(c.linkedBankAccount?.balance || 0).toLocaleString("en-IN")}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+        </div>
+
+        {/* Live Balance Preview */}
+        {availableBalance !== null && (
+          <div className={`emi-balance-preview ${isInsufficient ? "preview-danger" : isLowAfter ? "preview-warning" : "preview-ok"}`}>
+            <div className="emi-preview-row">
+              <span>Current Balance</span>
+              <strong>₹{Number(availableBalance).toLocaleString("en-IN")}</strong>
+            </div>
+            <div className="emi-preview-row">
+              <span>EMI Amount</span>
+              <strong style={{ color: "#dc2626" }}>− ₹{emiAmount.toLocaleString("en-IN")}</strong>
+            </div>
+            <div className="emi-preview-divider" />
+            <div className="emi-preview-row emi-preview-result">
+              <span>Remaining Balance</span>
+              <strong style={{ color: isInsufficient ? "#dc2626" : remainingAfter < 0 ? "#dc2626" : "#047857" }}>
+                ₹{Math.max(0, remainingAfter).toLocaleString("en-IN")}
+              </strong>
+            </div>
+            {isInsufficient && (
+              <div className="emi-alert emi-alert-danger">
+                Insufficient Balance. Account contains only ₹{Number(availableBalance).toLocaleString("en-IN")}.
+              </div>
+            )}
+            {!isInsufficient && isLowAfter && (
+              <div className="emi-alert emi-alert-warning">
+                Low Balance Warning: Only ₹{remainingAfter.toLocaleString("en-IN")} remaining after this payment.
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="modal-actions" style={{ marginTop: 20 }}>
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button
+            className="btn btn-primary"
+            onClick={handlePay}
+            disabled={paying || isInsufficient || !selectedId}
+          >
+            {paying ? "Processing..." : `Pay ₹${emiAmount.toLocaleString("en-IN")}`}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// ─── Advance Payment Modal ───────────────────────────────────────────────────
+function AdvancePaymentModal({ loan, bankAccounts, debitCards, onClose, onSuccess }) {
+  const emiAmount = Math.round(getLoanEMI(loan));
+  const totalEMIs = loan.tenureYears * 12;
+  const effectivePaid = loan.paidEMIs + Math.floor((loan.advancePaidAmount || 0) / emiAmount);
+  const remainingEMIs = totalEMIs - effectivePaid;
+
+  const [amount, setAmount] = useState("");
+  const [selectedType, setSelectedType] = useState("");
+  const [selectedId, setSelectedId] = useState("");
+  const [paying, setPaying] = useState(false);
+
+  const selectedAccount = selectedType === "bank"
+    ? bankAccounts.find(b => b._id === selectedId)
+    : debitCards.find(c => c._id === selectedId);
+
+  const availableBalance = selectedType === "bank"
+    ? selectedAccount?.balance ?? null
+    : selectedAccount?.linkedBankAccount?.balance ?? null;
+
+  const bankName = selectedType === "bank"
+    ? selectedAccount?.bankName
+    : selectedAccount?.linkedBankAccount?.bankName;
+
+  const payAmount = Number(amount) || 0;
+  const remainingAfter = availableBalance !== null ? availableBalance - payAmount : null;
+  const isInsufficient = availableBalance !== null && payAmount > 0 && payAmount > availableBalance;
+  const isLowAfter = remainingAfter !== null && remainingAfter >= 0 && remainingAfter < LOW_BALANCE_THRESHOLD;
+  const emisCovered = payAmount > 0 ? Math.floor(((loan.advancePaidAmount || 0) + payAmount) / emiAmount) : 0;
+  const newEffectivePaid = loan.paidEMIs + emisCovered;
+  const emisSaved = emisCovered - Math.floor((loan.advancePaidAmount || 0) / emiAmount);
+
+  const handleSourceChange = (e) => {
+    const [type, id] = e.target.value.split("|");
+    setSelectedType(type);
+    setSelectedId(id);
+  };
+
+  const handlePay = async () => {
+    if (!payAmount || payAmount <= 0) { toast.error("Enter a valid amount."); return; }
+    if (!selectedId) { toast.error("Please select a payment account."); return; }
+    if (isInsufficient) {
+      toast.error(`Insufficient Balance. Account has only ₹${Number(availableBalance).toLocaleString("en-IN")}.`);
+      return;
+    }
+
+    setPaying(true);
+    try {
+      const payload = {
+        amount: payAmount,
+        ...(selectedType === "bank" ? { bankAccountId: selectedId } : { debitCardId: selectedId }),
+      };
+      await api.post(`/loans/${loan._id}/advance-payment`, payload);
+
+      toast.success(
+        `Advance payment of ₹${payAmount.toLocaleString("en-IN")} made from ${bankName}!${emisSaved > 0 ? ` Covers ${emisSaved} extra EMI${emisSaved > 1 ? "s" : ""}.` : ""}`,
+        { style: { background: "#ecfdf5", color: "#065f46" }, duration: 5000 }
+      );
+      if (isLowAfter) {
+        setTimeout(() => toast(`Low Balance Warning: Only ₹${remainingAfter.toLocaleString("en-IN")} remaining in ${bankName}.`,
+          { style: { background: "#fff7ed", color: "#92400e" }, icon: "⚠️" }), 800);
+      }
+      onSuccess();
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Advance payment failed.", { style: { background: "#fef2f2", color: "#991b1b" } });
+    } finally {
+      setPaying(false);
+    }
+  };
+
+  return createPortal(
+    <div className="modal-overlay loan-modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal fade-in emi-pay-modal">
+        <div className="modal-header">
+          <h3>⚡ Advance Payment — {loan.title}</h3>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        {/* Loan snapshot */}
+        <div className="emi-info-grid">
+          <div className="emi-info-item">
+            <span>Monthly EMI</span>
+            <strong>₹{emiAmount.toLocaleString("en-IN")}</strong>
+          </div>
+          <div className="emi-info-item">
+            <span>EMIs Remaining</span>
+            <strong>{remainingEMIs} of {totalEMIs}</strong>
+          </div>
+          <div className="emi-info-item">
+            <span>Advance Paid So Far</span>
+            <strong style={{ color: "#059669" }}>₹{Number(loan.advancePaidAmount || 0).toLocaleString("en-IN")}</strong>
+          </div>
+          <div className="emi-info-item">
+            <span>EMIs Covered by Advance</span>
+            <strong>{emisCovered} EMI{emisCovered !== 1 ? "s" : ""}</strong>
+          </div>
+        </div>
+
+        {/* Amount input */}
+        <div className="form-group" style={{ marginTop: 16 }}>
+          <label>Advance Amount (₹)</label>
+          <input className="input" type="number" min="1" placeholder="Enter amount to pay in advance"
+            value={amount} onChange={e => setAmount(e.target.value)} />
+          {payAmount > 0 && emisSaved > 0 && (
+            <div style={{ marginTop: 6, fontSize: 13, color: "#059669", fontWeight: 600 }}>
+              This payment covers {emisSaved} additional EMI{emisSaved > 1 ? "s" : ""} — your next regular EMI will be due in {newEffectivePaid >= totalEMIs ? "0 (loan will complete!)" : `${totalEMIs - newEffectivePaid}`} months.
+            </div>
+          )}
+        </div>
+
+        {/* Account selector */}
+        <div className="form-group">
+          <label>Pay From</label>
+          <select className="input" value={selectedType && selectedId ? `${selectedType}|${selectedId}` : ""}
+            onChange={handleSourceChange}>
+            <option value="">— Select Account / Debit Card —</option>
+            {bankAccounts.length > 0 && (
+              <optgroup label="Bank Accounts">
+                {bankAccounts.map(b => (
+                  <option key={b._id} value={`bank|${b._id}`}>
+                    {b.bankName} ••••{b.accountNumber.slice(-4)} — ₹{Number(b.balance).toLocaleString("en-IN")}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {debitCards.length > 0 && (
+              <optgroup label="Debit Cards">
+                {debitCards.map(c => (
+                  <option key={c._id} value={`debit|${c._id}`}>
+                    {c.cardName} ••••{c.cardNumber.slice(-4)} → {c.linkedBankAccount?.bankName} — ₹{Number(c.linkedBankAccount?.balance || 0).toLocaleString("en-IN")}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+        </div>
+
+        {/* Balance preview */}
+        {availableBalance !== null && payAmount > 0 && (
+          <div className={`emi-balance-preview ${isInsufficient ? "preview-danger" : isLowAfter ? "preview-warning" : "preview-ok"}`}>
+            <div className="emi-preview-row">
+              <span>Current Balance</span>
+              <strong>₹{Number(availableBalance).toLocaleString("en-IN")}</strong>
+            </div>
+            <div className="emi-preview-row">
+              <span>Advance Amount</span>
+              <strong style={{ color: "#dc2626" }}>− ₹{payAmount.toLocaleString("en-IN")}</strong>
+            </div>
+            <div className="emi-preview-divider" />
+            <div className="emi-preview-row emi-preview-result">
+              <span>Remaining Balance</span>
+              <strong style={{ color: isInsufficient ? "#dc2626" : "#047857" }}>
+                ₹{Math.max(0, remainingAfter).toLocaleString("en-IN")}
+              </strong>
+            </div>
+            {isInsufficient && (
+              <div className="emi-alert emi-alert-danger">
+                Insufficient Balance. Account contains only ₹{Number(availableBalance).toLocaleString("en-IN")}.
+              </div>
+            )}
+            {!isInsufficient && isLowAfter && (
+              <div className="emi-alert emi-alert-warning">
+                Low Balance Warning: Only ₹{remainingAfter.toLocaleString("en-IN")} remaining after this payment.
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="modal-actions" style={{ marginTop: 20 }}>
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={handlePay}
+            disabled={paying || isInsufficient || !payAmount || !selectedId}>
+            {paying ? "Processing..." : `Pay ₹${payAmount > 0 ? payAmount.toLocaleString("en-IN") : "—"} in Advance`}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// ─── Main Page ───────────────────────────────────────────────────────────────
 export default function Loans() {
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,26 +423,18 @@ export default function Loans() {
   const [showCalc, setShowCalc] = useState(false);
   const [customEMI, setCustomEMI] = useState("");
   const [editEMI, setEditEMI] = useState(false);
+  const [payEMITarget, setPayEMITarget] = useState(null);
+  const [advancePaymentTarget, setAdvancePaymentTarget] = useState(null);
+  const [bankAccounts, setBankAccounts] = useState([]);
+  const [debitCards, setDebitCards] = useState([]);
 
-   const savedBanks = JSON.parse(localStorage.getItem("banks")) || [];
-   const savedCards = JSON.parse(localStorage.getItem("cards")) || [];
-
-   const [selectedBankFilter, setSelectedBankFilter] = useState("");
-
-   const [emiBankSelections, setEmiBankSelections] = useState({});
-
+  const [selectedBankFilter, setSelectedBankFilter] = useState("");
   const [calc, setCalc] = useState({ amount: "", rate: "", years: "" });
 
   const [form, setForm] = useState({
-    title: "",
-    category: "car",
-    principalAmount: "",
-    interestRate: "",
-    tenureYears: "",
-    startDate: new Date().toISOString().split("T")[0],
-    notes: "",
-    bankName: "",
-    accountNumber: "",
+    title: "", category: "car", principalAmount: "", interestRate: "",
+    tenureYears: "", startDate: new Date().toISOString().split("T")[0],
+    emiDueDay: "5", notes: "", bankName: "", accountNumber: "",
   });
 
   const previewEMI = form.principalAmount && form.interestRate && form.tenureYears
@@ -66,16 +443,32 @@ export default function Loans() {
   const previewTotalPayable = previewEMI * Number(form.tenureYears || 0) * 12;
   const previewTotalInterest = previewTotalPayable - Number(form.principalAmount || 0);
 
-  useEffect(() => { fetchLoans(); }, []);
+  useEffect(() => {
+    fetchLoans();
+    fetchAccounts();
+  }, []);
 
   const fetchLoans = async () => {
     try {
       const { data } = await api.get("/loans");
       setLoans(data.loans);
-    } catch (err) {
+    } catch {
       toast.error("Failed to fetch loans");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAccounts = async () => {
+    try {
+      const [bankRes, debitRes] = await Promise.all([
+        api.get("/bank-accounts"),
+        api.get("/debit-cards"),
+      ]);
+      setBankAccounts(bankRes.data.accounts || []);
+      setDebitCards(debitRes.data.cards || []);
+    } catch {
+      // non-critical
     }
   };
 
@@ -90,6 +483,7 @@ export default function Loans() {
         tenureYears: Number(form.tenureYears) || 0,
         customEMI: Number(customEMI) || 0,
         startDate: form.startDate,
+        emiDueDay: Number(form.emiDueDay) || 5,
         notes: form.notes,
         bankName: form.bankName,
         accountNumber: form.accountNumber,
@@ -97,64 +491,19 @@ export default function Loans() {
 
       if (editingLoanId) {
         const res = await api.put(`/loans/${editingLoanId}`, payload);
-        const updated = res.data?.loan || res.data;
-        setLoans(prev => prev.map(l => l._id === editingLoanId ? { ...l, ...updated } : l));
+        setLoans(prev => prev.map(l => l._id === editingLoanId ? { ...l, ...(res.data?.loan || res.data) } : l));
         toast.success("Loan updated!");
         setEditingLoanId(null);
       } else {
         const res = await api.post("/loans", payload);
-        const created = res.data?.loan || res.data;
-        setLoans(prev => [created, ...prev]);
+        setLoans(prev => [res.data?.loan || res.data, ...prev]);
         toast.success("Loan added!");
       }
       setShowModal(false);
       resetForm();
-      await fetchLoans();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Error adding loan");
-    }
-  };
-
-   const handlePayEMI = async (loan, selectedPaymentSource) => {
-    if (!selectedPaymentSource) {
-      toast.error("Please select a bank or credit card to pay EMI from");
-      return;
-    }
-
-    try {
-      const [sourceType, sourceName = selectedPaymentSource] = selectedPaymentSource.split(":");
-      const bank = sourceType === "bank" || sourceType === sourceName ? savedBanks.find(b => b.bankName === sourceName) : null;
-      const card = sourceType === "card" ? savedCards.find(c => c.cardName === sourceName) : null;
-      const paymentName = bank?.bankName || card?.cardName || "";
-      const paymentNumber = bank?.accountNumber || card?.cardNumber || loan.accountNumber || "";
-
-       await api.post(`/loans/${loan._id}/pay-emi`, { bankName: paymentName });
-
-       const emi = getLoanEMI(loan);
-
-      await api.post("/transactions", {
-        type: "expense",
-        amount: Math.round(emi),
-        category: "loan_emi",
-        description: `EMI - ${loan.title}`,
-        date: new Date().toISOString().split("T")[0],
-        paymentMethod: card ? "credit_card" : "netbanking",
-        bankName: paymentName,
-        accountNumber: paymentNumber,
-        isLoanEMI: true,
-        loanId: loan._id,
-        loanTitle: loan.title,
-      });
-
-      toast.success(
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <FaCheckCircle />
-          <span>EMI paid! Transaction saved in {paymentName}</span>
-        </div>
-      );
       fetchLoans();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Error paying EMI");
+      toast.error(err.response?.data?.message || "Error saving loan");
     }
   };
 
@@ -171,38 +520,33 @@ export default function Loans() {
       await api.delete(`/loans/${id}`);
       toast.success("Loan deleted");
       fetchLoans();
-    } catch (err) {
+    } catch {
       toast.error("Error deleting loan");
     }
   };
 
-  const resetForm = () => {
-    setCustomEMI("");
-    setEditEMI(false);
-    setForm({
-    title: "", category: "car",
-    principalAmount: "", interestRate: "",
-    tenureYears: "", startDate: new Date().toISOString().split("T")[0],
-    notes: "", bankName: "", accountNumber: "",
-    });
-  };
-
   const handleEditLoan = (loan) => {
     setForm({
-      title: loan.title || "",
-      category: loan.category || "car",
-      principalAmount: loan.principalAmount || "",
-      interestRate: loan.interestRate || "",
+      title: loan.title || "", category: loan.category || "car",
+      principalAmount: loan.principalAmount || "", interestRate: loan.interestRate || "",
       tenureYears: loan.tenureYears || "",
       startDate: loan.startDate ? loan.startDate.split("T")[0] : new Date().toISOString().split("T")[0],
-      notes: loan.notes || "",
-      bankName: loan.bankName || "",
-      accountNumber: loan.accountNumber || "",
+      emiDueDay: loan.emiDueDay || "5",
+      notes: loan.notes || "", bankName: loan.bankName || "", accountNumber: loan.accountNumber || "",
     });
     setEditingLoanId(loan._id);
     setCustomEMI(loan.customEMI || "");
     setEditEMI(false);
     setShowModal(true);
+  };
+
+  const resetForm = () => {
+    setCustomEMI(""); setEditEMI(false);
+    setForm({
+      title: "", category: "car", principalAmount: "", interestRate: "",
+      tenureYears: "", startDate: new Date().toISOString().split("T")[0],
+      emiDueDay: "5", notes: "", bankName: "", accountNumber: "",
+    });
   };
 
   const calcEMI = calc.amount && calc.rate && calc.years
@@ -212,27 +556,25 @@ export default function Loans() {
 
   const allActive = loans.filter(l => l.status === "active");
   const allCompleted = loans.filter(l => l.status === "completed");
-
-   const activeLoans = selectedBankFilter
-    ? allActive.filter(l => l.bankName === selectedBankFilter)
-    : allActive;
-  const completedLoans = selectedBankFilter
-    ? allCompleted.filter(l => l.bankName === selectedBankFilter)
-    : allCompleted;
+  const activeLoans = selectedBankFilter ? allActive.filter(l => l.bankName === selectedBankFilter) : allActive;
+  const completedLoans = selectedBankFilter ? allCompleted.filter(l => l.bankName === selectedBankFilter) : allCompleted;
 
   const totalDebt = activeLoans.reduce((s, l) => s + l.principalAmount, 0);
-  const totalEMIPerMonth = activeLoans.reduce(
-    (s, l) => s + getLoanEMI(l), 0
-  );
+  const totalEMIPerMonth = activeLoans.reduce((s, l) => s + getLoanEMI(l), 0);
+
+  // Bank names for filter (from localStorage fallback + MongoDB accounts)
+  const savedBanks = JSON.parse(localStorage.getItem("banks")) || [];
+  const allBankNames = [
+    ...bankAccounts.map(b => ({ bankName: b.bankName, accountNumber: b.accountNumber })),
+    ...savedBanks.filter(sb => !bankAccounts.some(b => b.bankName === sb.bankName)),
+  ];
 
   return (
     <div className="loans-page fade-in">
-
       <div className="page-header">
         <div>
           <h1 style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <FaUniversity size={30} />
-            Loans
+            <FaUniversity size={30} /> Loans
           </h1>
           <p className="page-sub">Manage your loans & EMIs</p>
         </div>
@@ -248,7 +590,7 @@ export default function Loans() {
         </div>
       </div>
 
-       <div className="loan-summary">
+      <div className="loan-summary">
         <div className="loan-sum-card">
           <div className="sum-label">Total Debt</div>
           <div className="sum-value" style={{ color: "#dc2626" }}>₹{totalDebt.toLocaleString()}</div>
@@ -257,7 +599,7 @@ export default function Loans() {
           <div className="sum-label">Active Loans</div>
           <div className="sum-value">{activeLoans.length}</div>
         </div>
-        <div className="loan-sum-card" >
+        <div className="loan-sum-card">
           <div className="sum-label">Monthly EMI Total</div>
           <div className="sum-value" style={{ color: "#d97706" }}>
             ₹{Math.round(totalEMIPerMonth).toLocaleString()}
@@ -269,25 +611,20 @@ export default function Loans() {
         </div>
       </div>
 
-       <div className="loans-bank-filter">
-        <label className="bank-filter-label">
-          <FaUniversity size={14} /> Filter by Bank
-        </label>
-        <select
-          className="input bank-filter-select"
-          value={selectedBankFilter}
-          onChange={e => setSelectedBankFilter(e.target.value)}
-        >
+      <div className="loans-bank-filter">
+        <label className="bank-filter-label"><FaUniversity size={14} /> Filter by Bank</label>
+        <select className="input bank-filter-select" value={selectedBankFilter}
+          onChange={e => setSelectedBankFilter(e.target.value)}>
           <option value="">All Banks</option>
-          {savedBanks.map((bank, i) => (
+          {allBankNames.map((bank, i) => (
             <option key={i} value={bank.bankName}>
-               {bank.bankName} — ••••{bank.accountNumber.slice(-4)}
+              {bank.bankName} — ••••{bank.accountNumber.slice(-4)}
             </option>
           ))}
         </select>
       </div>
 
-       {loading ? (
+      {loading ? (
         <div className="empty-state"><span className="loading" /></div>
       ) : activeLoans.length === 0 && completedLoans.length === 0 ? (
         <div className="loans-empty">
@@ -302,16 +639,11 @@ export default function Loans() {
               <h2 className="section-title">Active Loans</h2>
               <div className="loans-grid">
                 {activeLoans.map(loan => (
-                  <LoanCard 
-                    key={loan._id} 
-                    loan={loan}
-                    onPayEMI={handlePayEMI} 
-                    onDelete={handleDelete} 
+                  <LoanCard key={loan._id} loan={loan}
+                    onPayEMI={() => setPayEMITarget(loan)}
+                    onAdvancePayment={() => setAdvancePaymentTarget(loan)}
+                    onDelete={handleDelete}
                     onEdit={handleEditLoan}
-                    savedBanks={savedBanks}
-                    savedCards={savedCards}
-                    emiBankSelections={emiBankSelections}
-                    setEmiBankSelections={setEmiBankSelections}
                   />
                 ))}
               </div>
@@ -324,17 +656,11 @@ export default function Loans() {
               </h2>
               <div className="loans-grid">
                 {completedLoans.map(loan => (
-                  <LoanCard 
-                    key={loan._id} 
-                    loan={loan}
-                    onPayEMI={handlePayEMI} 
-                    onDelete={handleDelete} 
+                  <LoanCard key={loan._id} loan={loan}
+                    onPayEMI={() => {}}
+                    onDelete={handleDelete}
                     onEdit={handleEditLoan}
-                    savedBanks={savedBanks}
-                    savedCards={savedCards}
-                    emiBankSelections={emiBankSelections}
-                    setEmiBankSelections={setEmiBankSelections}
-                    completed 
+                    completed
                   />
                 ))}
               </div>
@@ -343,9 +669,40 @@ export default function Loans() {
         </>
       )}
 
-      {showModal && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && (setShowModal(false), setEditingLoanId(null), resetForm())}>
-          <div className="modal fade-in">
+      {/* Pay EMI Modal */}
+      {payEMITarget && (
+        <PayEMIModal
+          loan={payEMITarget}
+          bankAccounts={bankAccounts}
+          debitCards={debitCards}
+          onClose={() => setPayEMITarget(null)}
+          onSuccess={() => {
+            fetchLoans();
+            fetchAccounts();
+            window.dispatchEvent(new Event('emi-paid'));
+          }}
+        />
+      )}
+
+      {/* Advance Payment Modal */}
+      {advancePaymentTarget && (
+        <AdvancePaymentModal
+          loan={advancePaymentTarget}
+          bankAccounts={bankAccounts}
+          debitCards={debitCards}
+          onClose={() => setAdvancePaymentTarget(null)}
+          onSuccess={() => {
+            fetchLoans();
+            fetchAccounts();
+            window.dispatchEvent(new Event('emi-paid'));
+          }}
+        />
+      )}
+
+      {/* Add / Edit Loan Modal */}
+      {showModal && createPortal(
+        <div className="modal-overlay loan-modal-overlay" onClick={e => e.target === e.currentTarget && (setShowModal(false), setEditingLoanId(null), resetForm())}>
+          <div className="modal fade-in loan-edit-modal">
             <div className="modal-header">
               <h3>{editingLoanId ? "Edit Loan" : "Add New Loan"}</h3>
               <button className="modal-close" onClick={() => { setShowModal(false); setEditingLoanId(null); resetForm(); }}>✕</button>
@@ -359,13 +716,12 @@ export default function Loans() {
               <div className="form-row">
                 <div className="form-group">
                   <label>Category</label>
-                  <select className="input" value={form.category}
-                    onChange={e => setForm({ ...form, category: e.target.value })}>
-                    <option value="car"> Car</option>
-                    <option value="home"> Home</option>
-                    <option value="personal"> Personal</option>
-                    <option value="education"> Education</option>
-                    <option value="other"> Other</option>
+                  <select className="input" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>
+                    <option value="car">Car</option>
+                    <option value="home">Home</option>
+                    <option value="personal">Personal</option>
+                    <option value="education">Education</option>
+                    <option value="other">Other</option>
                   </select>
                 </div>
                 <div className="form-group">
@@ -378,41 +734,43 @@ export default function Loans() {
                 <div className="form-group">
                   <label>Loan Amount (₹)</label>
                   <input className="input" type="number" placeholder="e.g. 800000"
-                    value={form.principalAmount}
-                    onChange={e => setForm({ ...form, principalAmount: e.target.value })} required />
+                    value={form.principalAmount} onChange={e => setForm({ ...form, principalAmount: e.target.value })} required />
                 </div>
                 <div className="form-group">
-                  <label>Interest Rate (% per year)</label>
+                  <label>Interest Rate (% / year)</label>
                   <input className="input" type="number" step="0.1" placeholder="e.g. 10.5"
-                    value={form.interestRate}
-                    onChange={e => setForm({ ...form, interestRate: e.target.value })} required />
+                    value={form.interestRate} onChange={e => setForm({ ...form, interestRate: e.target.value })} required />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
                   <label>Tenure (Years)</label>
                   <input className="input" type="number" placeholder="e.g. 5"
-                    value={form.tenureYears}
-                    onChange={e => setForm({ ...form, tenureYears: e.target.value })} required />
+                    value={form.tenureYears} onChange={e => setForm({ ...form, tenureYears: e.target.value })} required />
                 </div>
                 <div className="form-group">
-                  <label>Bank (Loan Linked Bank)</label>
-                  <select className="input" value={form.bankName}
-                    onChange={e => {
-                      const sel = savedBanks.find(b => b.bankName === e.target.value);
-                      setForm({ ...form, bankName: sel?.bankName || "", accountNumber: sel?.accountNumber || "" });
-                    }}>
-                    <option value="">Select Bank</option>
-                    {savedBanks.map((bank, i) => (
-                      <option key={i} value={bank.bankName}>
-                        🏦 {bank.bankName} — ••••{bank.accountNumber.slice(-4)}
-                      </option>
-                    ))}
-                  </select>
+                  <label>EMI Due Day (1–28)</label>
+                  <input className="input" type="number" min="1" max="28" placeholder="e.g. 5"
+                    value={form.emiDueDay} onChange={e => setForm({ ...form, emiDueDay: e.target.value })} />
                 </div>
               </div>
+              <div className="form-group">
+                <label>Linked Bank Account</label>
+                <select className="input" value={form.bankName}
+                  onChange={e => {
+                    const acc = bankAccounts.find(b => b.bankName === e.target.value);
+                    setForm({ ...form, bankName: acc?.bankName || e.target.value, accountNumber: acc?.accountNumber || "" });
+                  }}>
+                  <option value="">Select Bank</option>
+                  {bankAccounts.map(b => (
+                    <option key={b._id} value={b.bankName}>
+                      {b.bankName} — ••••{b.accountNumber.slice(-4)} (₹{Number(b.balance).toLocaleString("en-IN")})
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-               {form.principalAmount && form.interestRate && form.tenureYears && (
+              {form.principalAmount && form.interestRate && form.tenureYears && (
                 <div className="loan-preview">
                   <div className="preview-item">
                     <span>Monthly EMI</span>
@@ -438,9 +796,7 @@ export default function Loans() {
                   </div>
                   <div className="preview-item">
                     <span>Total Interest</span>
-                    <strong style={{ color: "#dc2626" }}>
-                      ₹{Math.round(previewTotalInterest).toLocaleString()}
-                    </strong>
+                    <strong style={{ color: "#dc2626" }}>₹{Math.round(previewTotalInterest).toLocaleString()}</strong>
                   </div>
                 </div>
               )}
@@ -456,19 +812,19 @@ export default function Loans() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-       {showCalc && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowCalc(false)}>
-          <div className="modal fade-in" style={{ maxWidth: 440 }}>
+      {/* EMI Calculator */}
+      {showCalc && createPortal(
+        <div className="modal-overlay loan-modal-overlay" onClick={e => e.target === e.currentTarget && setShowCalc(false)}>
+          <div className="modal fade-in loan-calc-modal">
             <div className="modal-header">
               <h3 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <FaCalculator size={20} /> EMI Calculator
               </h3>
-              <button className="modal-close" onClick={() => setShowCalc(false)}>
-                <IoClose size={24} />
-              </button>
+              <button className="modal-close" onClick={() => setShowCalc(false)}><IoClose size={24} /></button>
             </div>
             <div className="form-group">
               <label>Loan Amount (₹)</label>
@@ -509,25 +865,22 @@ export default function Loans() {
                     <span>Interest {((calcInterest / calcTotal) * 100).toFixed(0)}%</span>
                   </div>
                   <div className="interest-bar">
-                    <div className="interest-bar-fill principal"
-                      style={{ width: `${(Number(calc.amount) / calcTotal) * 100}%` }} />
-                    <div className="interest-bar-fill interest-part"
-                      style={{ width: `${(calcInterest / calcTotal) * 100}%` }} />
+                    <div className="interest-bar-fill principal" style={{ width: `${(Number(calc.amount) / calcTotal) * 100}%` }} />
+                    <div className="interest-bar-fill interest-part" style={{ width: `${(calcInterest / calcTotal) * 100}%` }} />
                   </div>
                 </div>
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
 }
 
-function LoanCard({ 
-  loan, onPayEMI, onDelete, onEdit, completed, 
-  savedBanks, savedCards, emiBankSelections, setEmiBankSelections 
-}) {
+// ─── Loan Card ───────────────────────────────────────────────────────────────
+function LoanCard({ loan, onPayEMI, onAdvancePayment, onDelete, onEdit, completed }) {
   const emi = getLoanEMI(loan);
   const totalEMIs = loan.tenureYears * 12;
   const totalPayable = emi * totalEMIs;
@@ -535,8 +888,7 @@ function LoanCard({
   const progress = (loan.paidEMIs / totalEMIs) * 100;
   const remainingEMIs = totalEMIs - loan.paidEMIs;
   const remainingAmount = emi * remainingEMIs;
-
-   const currentSelectedBank = emiBankSelections[loan._id] || (loan.bankName ? `bank:${loan.bankName}` : "");
+  const { nextDueDate, daysRemaining, status: dueStatus } = getEMIDueInfo(loan);
 
   return (
     <div className={`loan-card ${completed ? "completed-loan" : ""}`}>
@@ -544,20 +896,30 @@ function LoanCard({
         <div className="loan-icon">{CATEGORY_ICONS[loan.category]}</div>
         <div className="loan-title-wrap">
           <div className="loan-title">{loan.title}</div>
-          <div className="loan-category">
-            {loan.category} loan · {loan.interestRate}% · {loan.tenureYears}yr
-          </div>
+          <div className="loan-category">{loan.category} · {loan.interestRate}% · {loan.tenureYears}yr</div>
           {loan.bankName && (
-            <div className="loan-bank-tag">
-              <FaUniversity size={11} /> {loan.bankName}
-            </div>
+            <div className="loan-bank-tag"><FaUniversity size={11} /> {loan.bankName}</div>
           )}
         </div>
-        <button className="action-btn edit-btn" onClick={() => onEdit && onEdit(loan)}>
-          <FaEdit />
-        </button>
+        <button className="action-btn edit-btn" onClick={() => onEdit && onEdit(loan)}><FaEdit /></button>
         <button className="action-btn delete-btn" onClick={() => onDelete(loan._id)}>🗑️</button>
       </div>
+
+      {/* EMI Due Date status */}
+      {!completed && (
+        <div className={`emi-due-row emi-due-row-${dueStatus.toLowerCase().replace(" ", "-")}`}>
+          <span className="emi-due-label">
+            {dueStatus === "Overdue"
+              ? `⚠️ Overdue by ${Math.abs(daysRemaining)} day${Math.abs(daysRemaining) !== 1 ? "s" : ""}`
+              : dueStatus === "Due Today"
+              ? "🔴 EMI Due Today!"
+              : dueStatus === "Paid"
+              ? `✅ This month's EMI paid`
+              : `Next EMI: ${nextDueDate.toLocaleDateString("en-IN", { day: "numeric", month: "short" })} (${daysRemaining}d)`}
+          </span>
+          <span className={`emi-due-badge emi-due-${dueStatus.toLowerCase().replace(" ", "-")}`}>{dueStatus}</span>
+        </div>
+      )}
 
       <div className="loan-amounts">
         <div className="loan-amt-item">
@@ -592,49 +954,41 @@ function LoanCard({
         {!completed && (
           <span style={{ color: "#dc2626" }}>₹{Math.round(remainingAmount).toLocaleString()} left</span>
         )}
+        {!completed && (loan.advancePaidAmount || 0) > 0 && (
+          <span style={{ color: "#059669", fontSize: 12 }}>
+            +₹{Number(loan.advancePaidAmount).toLocaleString("en-IN")} advance paid
+          </span>
+        )}
       </div>
 
-       {!completed && (
-        <div className="form-group" style={{ marginTop: "12px", marginBottom: "12px" }}>
-          <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: 600, color: "#4a5568" }}>
-            Pay EMI From
-          </label>
-          <select 
-            className="input" 
-            value={currentSelectedBank}
-            onChange={(e) => setEmiBankSelections({
-              ...emiBankSelections,
-              [loan._id]: e.target.value
-            })}
-            style={{ width: "100%", padding: "8px 10px", borderRadius: "6px" }}
-          >
-            <option value="">Select Bank or Credit Card</option>
-            {savedBanks.map((bank, i) => (
-              <option key={`bank-${i}`} value={`bank:${bank.bankName}`}>
-                 {bank.bankName} — ••••{bank.accountNumber.slice(-4)}
-              </option>
-            ))}
-            {savedCards.map((card, i) => (
-              <option key={`card-${i}`} value={`card:${card.cardName}`}>
-                 Credit Card - {card.cardName} - xxxx{card.cardNumber.slice(-4)}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {!completed ? (
-        <button className="btn btn-primary pay-emi-btn"
-          onClick={() => onPayEMI(loan, currentSelectedBank)}
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-          <FaCheckCircle size={16} />
-          Pay EMI — ₹{Math.round(emi).toLocaleString()}
-        </button>
-      ) : (
+      {completed ? (
         <div className="loan-completed-badge"
           style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "12px" }}>
           <GiPartyPopper size={18} /> Loan Completed!
         </div>
+      ) : dueStatus === "Paid" ? (
+        /* This month's EMI is already paid — show next due info */
+        <div className="emi-paid-notice">
+          <FaCheckCircle size={14} color="#059669" />
+          <span>
+            EMI paid for {new Date().toLocaleString("en-IN", { month: "long" })}.
+            Next due: <strong>{nextDueDate.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</strong>
+          </span>
+        </div>
+      ) : (
+        <button className="btn btn-primary pay-emi-btn" onClick={onPayEMI}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+          <FaCheckCircle size={16} />
+          Pay EMI — ₹{Math.round(emi).toLocaleString()}
+        </button>
+      )}
+
+      {/* Advance Payment — always available for active loans */}
+      {!completed && (
+        <button className="btn btn-secondary advance-pay-btn" onClick={onAdvancePayment}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginTop: 8, width: "100%" }}>
+          ⚡ Pay in Advance
+        </button>
       )}
     </div>
   );

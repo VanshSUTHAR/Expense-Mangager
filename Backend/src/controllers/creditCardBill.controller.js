@@ -36,10 +36,14 @@ const getBillDueDate = (bill) => {
 const normalizeBill = (bill) => {
   const dueDate = getBillDueDate(bill);
   const transactions = bill.transactions || (bill.transaction ? [bill.transaction] : []);
+  const paidAmount = Number(bill.paidAmount || 0);
+  const totalAmount = Number(bill.totalAmount || bill.amount || 0);
+  const outstandingAmount = Math.max(totalAmount - paidAmount, 0);
 
   return {
     ...bill,
-    outstandingAmount: Number(bill.totalAmount || bill.amount || 0),
+    paidAmount,
+    outstandingAmount,
     transactionCount: bill.transactionCount || transactions.length,
     statementDate: bill.statementDate || bill.transactionDate || bill.createdAt,
     dueDate,
@@ -81,6 +85,18 @@ const reconcileOpenStatements = async (userId) => {
       return txIds.map((transactionId) => String(transactionId));
     })
   );
+
+  // ── Preserve partial payments before deleting open bills ──
+  const openBillsBeforeDelete = allBills.filter((bill) =>
+    ['Pending', 'Overdue'].includes(bill.status)
+  );
+  const savedPaidAmounts = {};
+  for (const bill of openBillsBeforeDelete) {
+    const paid = Number(bill.paidAmount || 0);
+    if (paid > 0) {
+      savedPaidAmounts[bill.cardKey] = (savedPaidAmounts[bill.cardKey] || 0) + paid;
+    }
+  }
 
   await CreditCardBill.deleteMany({ user: userId, status: { $in: ['Pending', 'Overdue'] } });
 
@@ -136,7 +152,16 @@ const reconcileOpenStatements = async (userId) => {
     existingBill.description = existingBill.description || transaction.description || transaction.category || 'Credit card statement';
   }
 
+  // ── Restore partial payments onto the rebuilt bills ──
   for (const bill of openBillsByCard.values()) {
+    const restoredPaid = savedPaidAmounts[bill.cardKey] || 0;
+    if (restoredPaid > 0) {
+      bill.paidAmount = Math.min(restoredPaid, bill.totalAmount);
+      if (bill.paidAmount >= bill.totalAmount) {
+        bill.status = 'Paid';
+        bill.paidAt = new Date();
+      }
+    }
     await bill.save();
   }
 };
@@ -185,18 +210,38 @@ const getCreditCardBills = async (req, res) => {
 
 const payCreditCardBill = async (req, res) => {
   try {
+    const amount = Number(req.body.amount || 0);
     const bill = await CreditCardBill.findOne({ _id: req.params.id, user: req.user._id });
 
     if (!bill) {
       return res.status(404).json({ success: false, message: 'Credit card bill not found' });
     }
+    if (bill.status === 'Paid') {
+      return res.status(400).json({ success: false, message: 'This bill is already paid' });
+    }
 
-    bill.status = 'Paid';
-    bill.paidAt = new Date();
-    bill.settlementType = 'full';
-    bill.emiMonths = 0;
-    bill.emiAmount = 0;
-    bill.emiSchedule = [];
+    const paidAmount = Number(bill.paidAmount || 0);
+    const totalAmount = Number(bill.totalAmount || 0);
+    const outstanding = Math.max(totalAmount - paidAmount, 0);
+    const paymentAmount = amount > 0 ? amount : outstanding;
+
+    if (paymentAmount <= 0) {
+      return res.status(400).json({ success: false, message: 'Payment amount must be greater than zero' });
+    }
+    if (paymentAmount > outstanding) {
+      return res.status(400).json({ success: false, message: 'Payment amount exceeds outstanding balance' });
+    }
+
+    bill.paidAmount = paidAmount + paymentAmount;
+    if (bill.paidAmount >= totalAmount) {
+      bill.paidAmount = totalAmount;
+      bill.status = 'Paid';
+      bill.paidAt = new Date();
+      bill.settlementType = 'full';
+      bill.emiMonths = 0;
+      bill.emiAmount = 0;
+      bill.emiSchedule = [];
+    }
     await bill.save();
 
     res.json({

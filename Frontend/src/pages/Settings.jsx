@@ -1,79 +1,141 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import "./Settings.css";
+import api from "../utils/api";
+import toast from "react-hot-toast";
 import { IoSettingsOutline } from "react-icons/io5";
-import { FaUniversity, FaPlus, FaCreditCard } from "react-icons/fa";
+import { FaUniversity, FaPlus, FaCreditCard, FaWallet, FaTrash, FaUser, FaCoins } from "react-icons/fa";
+import { MdCreditCard } from "react-icons/md";
+
+const LOW_BALANCE_THRESHOLD = 1000;
 
 export default function Settings() {
   const { user, updateUser } = useAuth();
   const [saving, setSaving] = useState(false);
-  const [newBank, setNewBank] = useState({ bankName: "", accountNumber: "" });
-  const [newCard, setNewCard] = useState({ cardName: "", cardNumber: "" });
 
   const [form, setForm] = useState({
     name: user?.name || "",
     currency: user?.currency || "INR",
     monthlyBudget: user?.monthlyBudget || "",
-    selectedBank: user?.selectedBank || "",
-    banks: JSON.parse(localStorage.getItem("banks")) || [],
-    selectedCard: user?.selectedCard || "",
-    cards: JSON.parse(localStorage.getItem("cards")) || [],
   });
 
-  const handleAddBank = () => {
-    if (!newBank.bankName || !newBank.accountNumber) return;
-    const updatedBanks = [
-      { bankName: newBank.bankName, accountNumber: newBank.accountNumber },
-      ...form.banks,
+  const [bankAccounts, setBankAccounts] = useState([]);
+  const [newBank, setNewBank] = useState({ bankName: "", accountNumber: "", balance: "" });
+  const [bankLoading, setBankLoading] = useState(true);
+  const [addingBank, setAddingBank] = useState(false);
+
+  const [debitCards, setDebitCards] = useState([]);
+  const [newDebitCard, setNewDebitCard] = useState({ cardName: "", cardNumber: "", linkedBankAccountId: "" });
+  const [debitLoading, setDebitLoading] = useState(true);
+  const [addingDebit, setAddingDebit] = useState(false);
+
+  const [creditCards, setCreditCards] = useState(JSON.parse(localStorage.getItem("cards")) || []);
+  const [newCreditCard, setNewCreditCard] = useState({ cardName: "", cardNumber: "", creditLimit: "" });
+  const [selectedCard, setSelectedCard] = useState(localStorage.getItem("selectedCard") || "");
+  const [addingCredit, setAddingCredit] = useState(false);
+
+  useEffect(() => { fetchBankAccounts(); fetchDebitCards(); }, []);
+
+  const fetchBankAccounts = async () => {
+    try {
+      const { data } = await api.get("/bank-accounts");
+      setBankAccounts(data.accounts || []);
+    } catch { toast.error("Failed to load bank accounts"); }
+    finally { setBankLoading(false); }
+  };
+
+  const fetchDebitCards = async () => {
+    try {
+      const { data } = await api.get("/debit-cards");
+      setDebitCards(data.cards || []);
+    } catch { toast.error("Failed to load debit cards"); }
+    finally { setDebitLoading(false); }
+  };
+
+  const handleAddBank = async () => {
+    if (!newBank.bankName.trim() || !newBank.accountNumber.trim()) {
+      toast.error("Bank name and account number are required");
+      return;
+    }
+    setAddingBank(true);
+    try {
+      const { data } = await api.post("/bank-accounts", {
+        bankName: newBank.bankName.trim(),
+        accountNumber: newBank.accountNumber.trim(),
+        balance: Number(newBank.balance) || 0,
+      });
+      setBankAccounts(prev => [data.account, ...prev]);
+      setNewBank({ bankName: "", accountNumber: "", balance: "" });
+      toast.success("Bank account added");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to add bank account");
+    } finally { setAddingBank(false); }
+  };
+
+  const handleDeleteBank = async (id) => {
+    try {
+      await api.delete(`/bank-accounts/${id}`);
+      setBankAccounts(prev => prev.filter(b => b._id !== id));
+      toast.success("Bank account removed");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to delete");
+    }
+  };
+
+  const handleAddDebitCard = async () => {
+    if (!newDebitCard.cardName.trim() || !newDebitCard.cardNumber.trim() || !newDebitCard.linkedBankAccountId) {
+      toast.error("All fields including linked bank are required");
+      return;
+    }
+    setAddingDebit(true);
+    try {
+      const { data } = await api.post("/debit-cards", {
+        cardName: newDebitCard.cardName.trim(),
+        cardNumber: newDebitCard.cardNumber.trim(),
+        linkedBankAccountId: newDebitCard.linkedBankAccountId,
+      });
+      setDebitCards(prev => [data.card, ...prev]);
+      setNewDebitCard({ cardName: "", cardNumber: "", linkedBankAccountId: "" });
+      toast.success("Debit card linked");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to link debit card");
+    } finally { setAddingDebit(false); }
+  };
+
+  const handleDeleteDebitCard = async (id) => {
+    try {
+      await api.delete(`/debit-cards/${id}`);
+      setDebitCards(prev => prev.filter(c => c._id !== id));
+      toast.success("Debit card removed");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to delete");
+    }
+  };
+
+  const handleAddCreditCard = () => {
+    if (!newCreditCard.cardName.trim() || !newCreditCard.cardNumber.trim()) {
+      toast.error("Card name and number are required");
+      return;
+    }
+    const updated = [
+      { cardName: newCreditCard.cardName.trim(), cardNumber: newCreditCard.cardNumber.trim(), creditLimit: Number(newCreditCard.creditLimit) || 0 },
+      ...creditCards,
     ];
-    setForm({ ...form, banks: updatedBanks });
-    localStorage.setItem("banks", JSON.stringify(updatedBanks));
-    setNewBank({ bankName: "", accountNumber: "" });
+    setCreditCards(updated);
+    localStorage.setItem("cards", JSON.stringify(updated));
+    setNewCreditCard({ cardName: "", cardNumber: "", creditLimit: "" });
+    toast.success("Credit card added");
   };
 
-  const handleAddCard = () => {
-    if (!newCard.cardName || !newCard.cardNumber) return;
-    const updatedCards = [
-      { cardName: newCard.cardName, cardNumber: newCard.cardNumber },
-      ...form.cards,
-    ];
-    setForm({ ...form, cards: updatedCards });
-    localStorage.setItem("cards", JSON.stringify(updatedCards));
-    setNewCard({ cardName: "", cardNumber: "" });
-  };
-
-  const handleDeleteCard = (indexToDelete) => {
-    const updatedCards = form.cards.filter((_, i) => i !== indexToDelete);
-    const deletedCard = form.cards[indexToDelete]?.cardName;
-    setForm({
-      ...form,
-      cards: updatedCards,
-      selectedCard: form.selectedCard === deletedCard ? "" : form.selectedCard,
-    });
-    localStorage.setItem("cards", JSON.stringify(updatedCards));
-    if (form.selectedCard === deletedCard) localStorage.removeItem("selectedCard");
-  };
-
-  const handleSelectCard = (cardName) => {
-    setForm({ ...form, selectedCard: cardName });
-    localStorage.setItem("selectedCard", cardName);
-  };
-
-  const handleDeleteBank = (indexToDelete) => {
-    const updatedBanks = form.banks.filter((_, i) => i !== indexToDelete);
-    const deletedBank = form.banks[indexToDelete]?.bankName;
-    setForm({
-      ...form,
-      banks: updatedBanks,
-      selectedBank: form.selectedBank === deletedBank ? "" : form.selectedBank,
-    });
-    localStorage.setItem("banks", JSON.stringify(updatedBanks));
-    if (form.selectedBank === deletedBank) localStorage.removeItem("selectedBank");
-  };
-
-  const handleSelectBank = (bankName) => {
-    setForm({ ...form, selectedBank: bankName });
-    localStorage.setItem("selectedBank", bankName);
+  const handleDeleteCreditCard = (i) => {
+    const deleted = creditCards[i]?.cardName;
+    const updated = creditCards.filter((_, idx) => idx !== i);
+    setCreditCards(updated);
+    localStorage.setItem("cards", JSON.stringify(updated));
+    if (selectedCard === deleted) {
+      setSelectedCard("");
+      localStorage.removeItem("selectedCard");
+    }
+    toast.success("Credit card removed");
   };
 
   const handleSave = async (e) => {
@@ -81,250 +143,311 @@ export default function Settings() {
     setSaving(true);
     try {
       await updateUser({ ...form, monthlyBudget: Number(form.monthlyBudget) || 0 });
-      localStorage.setItem("selectedBank", form.selectedBank);
-      localStorage.setItem("banks", JSON.stringify(form.banks));
-        localStorage.setItem("selectedCard", form.selectedCard);
-        localStorage.setItem("cards", JSON.stringify(form.cards));
-    } finally {
-      setSaving(false);
-    }
+      toast.success("Profile saved");
+    } finally { setSaving(false); }
   };
 
   return (
     <div className="settings-page fade-in">
-
       <div className="page-header">
         <div>
-          <h1 style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <IoSettingsOutline size={34} color="#1b2559" />
-            Settings
+          <h1 style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <IoSettingsOutline size={32} color="#1b2559" /> Settings
           </h1>
-          <p className="page-sub">Manage your account preferences</p>
+          <p className="page-sub">Manage your profile, accounts and cards</p>
         </div>
       </div>
 
-      {/* TWO COLUMN LAYOUT */}
-      <div className="settings-two-col">
+      <div className="settings-layout-grid">
 
-        {/* LEFT — Profile */}
-        <div className="card settings-card">
-          <h3 className="settings-title">Profile Settings</h3>
+        {/* ── LEFT: Profile ── */}
+        <div className="settings-section-card">
+          <div className="settings-section-header">
+            <div className="settings-section-icon" style={{ background: "#eff6ff" }}>
+              <FaUser size={16} color="#1d4ed8" />
+            </div>
+            <div>
+              <div className="settings-section-title">Profile</div>
+              <div className="settings-section-sub">Your personal details</div>
+            </div>
+          </div>
+
+          <div className="settings-avatar-row">
+            <div className="settings-avatar">{user?.name?.[0]?.toUpperCase()}</div>
+            <div>
+              <div className="settings-avatar-name">{user?.name}</div>
+              <div className="settings-avatar-email">{user?.email}</div>
+            </div>
+          </div>
 
           <form onSubmit={handleSave}>
-
-            <div className="profile-top-section">
-              <div className="profile-avatar-section">
-                <div className="big-avatar">
-                  {user?.name?.[0]?.toUpperCase()}
-                </div>
-                <div>
-                  <div className="user-display-name">{user?.name}</div>
-                  <div className="user-display-email">{user?.email}</div>
-                </div>
-              </div>
-            </div>
-
             <div className="form-group">
               <label>Display Name</label>
-              <input
-                className="input"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
+              <input className="input" value={form.name}
+                onChange={e => setForm({ ...form, name: e.target.value })} />
             </div>
-
             <div className="form-group">
               <label>Currency</label>
-              <select
-                className="input"
-                value={form.currency}
-                onChange={(e) => setForm({ ...form, currency: e.target.value })}
-              >
-                <option value="INR">₹ INR - Indian Rupee</option>
-                <option value="USD">$ USD - US Dollar</option>
-                <option value="EUR">€ EUR - Euro</option>
-                <option value="GBP">£ GBP - British Pound</option>
+              <select className="input" value={form.currency}
+                onChange={e => setForm({ ...form, currency: e.target.value })}>
+                <option value="INR">₹ INR – Indian Rupee</option>
+                <option value="USD">$ USD – US Dollar</option>
+                <option value="EUR">€ EUR – Euro</option>
+                <option value="GBP">£ GBP – British Pound</option>
               </select>
             </div>
-
             <div className="form-group">
               <label>Monthly Budget (₹)</label>
-              <input
-                className="input"
-                type="number"
-                placeholder="e.g. 20000"
+              <input className="input" type="number" placeholder="e.g. 20000"
                 value={form.monthlyBudget}
-                onChange={(e) => setForm({ ...form, monthlyBudget: e.target.value })}
-              />
-             
+                onChange={e => setForm({ ...form, monthlyBudget: e.target.value })} />
             </div>
-
-            <button
-              className="btn btn-primary save-btn"
-              type="submit"
-              disabled={saving}
-            >
-              {saving ? "Saving..." : "💾 Save Changes"}
+            <button className="btn btn-primary save-btn" type="submit" disabled={saving}>
+              {saving ? "Saving…" : "Save Changes"}
             </button>
-
           </form>
         </div>
 
-         <div className="card settings-card">
-          <h3 className="settings-title">Bank Accounts</h3>
+        {/* ── RIGHT: stacked cards ── */}
+        <div className="settings-right-stack">
 
-          {form.selectedBank && (
-            <div className="active-bank-preview">
-              <span>Active Bank:</span>
-              <strong>🏦 {form.selectedBank}</strong>
-            </div>
-          )}
-
-          <div className="added-banks-list">
-            {form.banks.length === 0 && (
-              <div className="no-banks">No banks added yet</div>
-            )}
-            {form.banks.map((bank, index) => (
-              <div
-                key={index}
-                className={`bank-mini-card ${form.selectedBank === bank.bankName ? "active-bank" : ""}`}
-                onClick={() => handleSelectBank(bank.bankName)}
-              >
-                <button
-                  type="button"
-                  className="delete-bank-btn"
-                  onClick={(e) => { e.stopPropagation(); handleDeleteBank(index); }}
-                >
-                  ✕
-                </button>
-
-                <div className="bank-top">
-                  <div className="bank-icon">
-                    <FaUniversity size={20} color="#6c8cff" />
-                  </div>
-                  <div>
-                    <div className="mini-bank-name">{bank.bankName}</div>
-                    <div className="mini-bank-number">
-                      ••••{bank.accountNumber.slice(-4)}
-                    </div>
-                  </div>
-                </div>
-
-                {form.selectedBank === bank.bankName && (
-                  <div className="active-bank-tag">✓ Active Bank</div>
-                )}
+          {/* Bank Accounts */}
+          <div className="settings-section-card">
+            <div className="settings-section-header">
+              <div className="settings-section-icon" style={{ background: "#eff6ff" }}>
+                <FaUniversity size={16} color="#1d4ed8" />
               </div>
-            ))}
-          </div>
-
-          <div className="add-bank-box">
-            <h4 style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <FaPlus size={12} /> Add New Bank
-            </h4>
-            <div className="form-row">
-              <input
-                className="input"
-                type="text"
-                placeholder="Bank Name"
-                value={newBank.bankName}
-                onChange={(e) => setNewBank({ ...newBank, bankName: e.target.value })}
-              />
-              <input
-                className="input"
-                type="text"
-                placeholder="Account Number"
-                value={newBank.accountNumber}
-                onChange={(e) => setNewBank({ ...newBank, accountNumber: e.target.value })}
-              />
-            </div>
-            <button
-              type="button"
-              className="btn btn-secondary add-bank-btn"
-              onClick={handleAddBank}
-            >
-              <FaPlus size={12} /> Add Bank
-            </button>
-          </div>
-
-        </div>
-        
-        <div className="card settings-card">
-          <h3 className="settings-title">Credit Cards</h3>
-
-          {form.selectedCard && (
-            <div className="active-bank-preview">
-              <span>Active Card:</span>
-              <strong>💳 {form.selectedCard}</strong>
-            </div>
-          )}
-
-          <div className="added-banks-list">
-            {form.cards.length === 0 && (
-              <div className="no-banks">No cards added yet</div>
-            )}
-            {form.cards.map((card, index) => (
-              <div
-                key={index}
-                className={`bank-mini-card ${form.selectedCard === card.cardName ? "active-bank" : ""}`}
-                onClick={() => handleSelectCard(card.cardName)}
-              >
-                <button
-                  type="button"
-                  className="delete-bank-btn"
-                  onClick={(e) => { e.stopPropagation(); handleDeleteCard(index); }}
-                >
-                  ✕
-                </button>
-
-                <div className="bank-top">
-                  <div className="bank-icon">
-                    <FaCreditCard size={20} color="#6c8cff" />
-                  </div>
-                  <div>
-                    <div className="mini-bank-name">{card.cardName}</div>
-                    <div className="mini-bank-number">
-                      ••••{card.cardNumber.slice(-4)}
-                    </div>
-                  </div>
-                </div>
-
-                {form.selectedCard === card.cardName && (
-                  <div className="active-bank-tag">✓ Active Card</div>
-                )}
+              <div>
+                <div className="settings-section-title">Bank Accounts</div>
+                <div className="settings-section-sub">Accounts with balance tracking</div>
               </div>
-            ))}
-          </div>
-
-          <div className="add-bank-box">
-            <h4 style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <FaPlus size={12} /> Add New Card
-            </h4>
-            <div className="form-row">
-              <input
-                className="input"
-                type="text"
-                placeholder="Card Name (e.g., Visa)"
-                value={newCard.cardName}
-                onChange={(e) => setNewCard({ ...newCard, cardName: e.target.value })}
-              />
-              <input
-                className="input"
-                type="text"
-                placeholder="Card Number"
-                value={newCard.cardNumber}
-                onChange={(e) => setNewCard({ ...newCard, cardNumber: e.target.value })}
-              />
             </div>
-            <button
-              type="button"
-              className="btn btn-secondary add-bank-btn"
-              onClick={handleAddCard}
-            >
-              <FaPlus size={12} /> Add Card
-            </button>
+
+            {bankLoading ? (
+              <div className="settings-loading">Loading…</div>
+            ) : bankAccounts.length === 0 ? (
+              <div className="settings-empty">No bank accounts yet</div>
+            ) : (
+              <div className="settings-item-list">
+                {bankAccounts.map(bank => {
+                  const isLow = bank.balance < LOW_BALANCE_THRESHOLD;
+                  return (
+                    <div key={bank._id} className={`settings-item ${isLow ? "settings-item-warn" : ""}`}>
+                      <div className="settings-item-icon" style={{ background: "#eff6ff" }}>
+                        <FaUniversity size={14} color="#1d4ed8" />
+                      </div>
+                      <div className="settings-item-info">
+                        <div className="settings-item-name">{bank.bankName}</div>
+                        <div className="settings-item-sub">••••{bank.accountNumber.slice(-4)}</div>
+                      </div>
+                      <div className="settings-item-right">
+                        <div className={`settings-balance ${isLow ? "balance-low" : "balance-ok"}`}>
+                          ₹{Number(bank.balance).toLocaleString("en-IN")}
+                        </div>
+                        {isLow && <div className="settings-warn-tag">⚠️ Low</div>}
+                      </div>
+                      <button className="settings-delete-btn" onClick={() => handleDeleteBank(bank._id)}
+                        title="Remove">
+                        <FaTrash size={12} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="settings-add-form">
+              <div className="settings-add-title"><FaPlus size={11} /> Add Bank Account</div>
+              <div className="settings-form-grid-3">
+                <div className="form-group">
+                  <label>Bank Name</label>
+                  <input className="input" placeholder="e.g. HDFC Bank"
+                    value={newBank.bankName}
+                    onChange={e => setNewBank({ ...newBank, bankName: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Account Number</label>
+                  <input className="input" placeholder="e.g. 1234567890"
+                    value={newBank.accountNumber}
+                    onChange={e => setNewBank({ ...newBank, accountNumber: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Opening Balance (₹)</label>
+                  <input className="input" type="number" placeholder="e.g. 50000"
+                    value={newBank.balance}
+                    onChange={e => setNewBank({ ...newBank, balance: e.target.value })} />
+                </div>
+              </div>
+              <button className="btn btn-secondary settings-add-btn" onClick={handleAddBank} disabled={addingBank}>
+                <FaPlus size={11} /> {addingBank ? "Adding…" : "Add Bank Account"}
+              </button>
+            </div>
           </div>
 
-        </div>
+          {/* Debit Cards */}
+          <div className="settings-section-card">
+            <div className="settings-section-header">
+              <div className="settings-section-icon" style={{ background: "#ecfdf5" }}>
+                <FaWallet size={16} color="#059669" />
+              </div>
+              <div>
+                <div className="settings-section-title">Debit Cards</div>
+                <div className="settings-section-sub">Each card is linked to a bank account</div>
+              </div>
+            </div>
+
+            {debitLoading ? (
+              <div className="settings-loading">Loading…</div>
+            ) : debitCards.length === 0 ? (
+              <div className="settings-empty">No debit cards linked yet</div>
+            ) : (
+              <div className="settings-item-list">
+                {debitCards.map(card => {
+                  const bal = card.linkedBankAccount?.balance ?? 0;
+                  const isLow = bal < LOW_BALANCE_THRESHOLD;
+                  return (
+                    <div key={card._id} className={`settings-item ${isLow ? "settings-item-warn" : ""}`}>
+                      <div className="settings-item-icon" style={{ background: "#ecfdf5" }}>
+                        <MdCreditCard size={16} color="#059669" />
+                      </div>
+                      <div className="settings-item-info">
+                        <div className="settings-item-name">{card.cardName}</div>
+                        <div className="settings-item-sub">
+                          ••••{card.cardNumber.slice(-4)}
+                          <span className="settings-linked-tag">→ {card.linkedBankAccount?.bankName}</span>
+                        </div>
+                      </div>
+                      <div className="settings-item-right">
+                        <div className={`settings-balance ${isLow ? "balance-low" : "balance-ok"}`}>
+                          ₹{Number(bal).toLocaleString("en-IN")}
+                        </div>
+                        {isLow && <div className="settings-warn-tag">⚠️ Low</div>}
+                      </div>
+                      <button className="settings-delete-btn" onClick={() => handleDeleteDebitCard(card._id)}
+                        title="Remove">
+                        <FaTrash size={12} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="settings-add-form">
+              <div className="settings-add-title"><FaPlus size={11} /> Link Debit Card</div>
+              {bankAccounts.length === 0 && (
+                <p className="settings-warning-text">⚠️ Add a bank account first before linking a debit card.</p>
+              )}
+              <div className="settings-form-grid-3">
+                <div className="form-group">
+                  <label>Card Name</label>
+                  <input className="input" placeholder="e.g. HDFC Debit"
+                    value={newDebitCard.cardName}
+                    onChange={e => setNewDebitCard({ ...newDebitCard, cardName: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Card Number</label>
+                  <input className="input" placeholder="e.g. 4111111111111111"
+                    value={newDebitCard.cardNumber}
+                    onChange={e => setNewDebitCard({ ...newDebitCard, cardNumber: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Linked Bank Account</label>
+                  <select className="input" value={newDebitCard.linkedBankAccountId}
+                    onChange={e => setNewDebitCard({ ...newDebitCard, linkedBankAccountId: e.target.value })}>
+                    <option value="">Select account</option>
+                    {bankAccounts.map(b => (
+                      <option key={b._id} value={b._id}>
+                        {b.bankName} ••••{b.accountNumber.slice(-4)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <button className="btn btn-secondary settings-add-btn" onClick={handleAddDebitCard}
+                disabled={addingDebit || bankAccounts.length === 0}>
+                <FaPlus size={11} /> {addingDebit ? "Linking…" : "Link Debit Card"}
+              </button>
+            </div>
+          </div>
+
+          {/* Credit Cards */}
+          <div className="settings-section-card">
+            <div className="settings-section-header">
+              <div className="settings-section-icon" style={{ background: "#faf5ff" }}>
+                <FaCreditCard size={16} color="#7c3aed" />
+              </div>
+              <div>
+                <div className="settings-section-title">Credit Cards</div>
+                <div className="settings-section-sub">For tracking credit card bill statements</div>
+              </div>
+            </div>
+
+            {creditCards.length === 0 ? (
+              <div className="settings-empty">No credit cards added yet</div>
+            ) : (
+              <div className="settings-item-list">
+                {creditCards.map((card, i) => (
+                  <div key={i}
+                    className={`settings-item settings-item-selectable ${selectedCard === card.cardName ? "settings-item-active" : ""}`}
+                    onClick={() => {
+                      const next = selectedCard === card.cardName ? "" : card.cardName;
+                      setSelectedCard(next);
+                      next ? localStorage.setItem("selectedCard", next) : localStorage.removeItem("selectedCard");
+                    }}>
+                    <div className="settings-item-icon" style={{ background: "#faf5ff" }}>
+                      <FaCreditCard size={14} color="#7c3aed" />
+                    </div>
+                    <div className="settings-item-info">
+                      <div className="settings-item-name">
+                        {card.cardName}
+                        {selectedCard === card.cardName && <span className="settings-active-chip">Active</span>}
+                      </div>
+                      <div className="settings-item-sub">••••{card.cardNumber.slice(-4)}</div>
+                    </div>
+                    <div className="settings-item-right">
+                      {card.creditLimit > 0 && (
+                        <div className="settings-limit">Limit: ₹{Number(card.creditLimit).toLocaleString()}</div>
+                      )}
+                    </div>
+                    <button className="settings-delete-btn" onClick={e => { e.stopPropagation(); handleDeleteCreditCard(i); }}
+                      title="Remove">
+                      <FaTrash size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="settings-add-form">
+              <div className="settings-add-title"><FaPlus size={11} /> Add Credit Card</div>
+              <div className="settings-form-grid-3">
+                <div className="form-group">
+                  <label>Card Name</label>
+                  <input className="input" placeholder="e.g. Axis Visa"
+                    value={newCreditCard.cardName}
+                    onChange={e => setNewCreditCard({ ...newCreditCard, cardName: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Card Number</label>
+                  <input className="input" placeholder="e.g. 4111111111111111"
+                    value={newCreditCard.cardNumber}
+                    onChange={e => setNewCreditCard({ ...newCreditCard, cardNumber: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Credit Limit (₹)</label>
+                  <input className="input" type="number" placeholder="e.g. 100000"
+                    value={newCreditCard.creditLimit}
+                    onChange={e => setNewCreditCard({ ...newCreditCard, creditLimit: e.target.value })} />
+                </div>
+              </div>
+              <button className="btn btn-secondary settings-add-btn" onClick={handleAddCreditCard}>
+                <FaPlus size={11} /> Add Credit Card
+              </button>
+            </div>
+          </div>
+
+        </div>{/* end right stack */}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-import './Goals.css';
+import '../index.css';
 import { FaCheckCircle } from 'react-icons/fa';
 
 

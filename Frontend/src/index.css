@@ -51,6 +51,60 @@ select {
   font: inherit;
 }
 
+/* ── Expense Payment Method Tabs ── */
+.pay-method-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px;
+}
+
+.pay-method-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 160ms ease;
+  white-space: nowrap;
+}
+
+.pay-method-tab:hover {
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 1px 4px rgba(15,23,42,0.08);
+}
+
+.pay-method-tab.active {
+  background: #fff;
+  color: #0f172a;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(15,23,42,0.10);
+}
+
+.pay-method-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pay-method-hint {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+}
+
 button {
   cursor: pointer;
 }
@@ -247,12 +301,26 @@ h3 {
   }
 }
 
+.export-btn {
+  font-size: 12.5px;
+  padding: 8px 12px;
+  min-height: 36px;
+  gap: 6px;
+}
+
 .stats-grid,
 .summary-wrapper,
 .report-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
+  margin-bottom: 18px;
+}
+.summary-wrapper1{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  width: 133.5%;
   margin-bottom: 18px;
 }
 
@@ -1556,4 +1624,1135 @@ h3 {
   .modal-overlay {
     padding: 12px;
   }
+}
+
+
+
+/* CREDIT CARD LIMIT SECTION */
+.credit-limit-section {
+  background: white;
+  border-radius: 20px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+  border-left: 4px solid #6c8cff;
+}
+
+.credit-limit-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 15px; font-weight: 700; color: #1b2559;
+  margin-bottom: 16px;
+}
+
+.credit-limit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.credit-limit-card {
+  background: #f5f7ff;
+  border-radius: 14px;
+  padding: 16px;
+  border: 1px solid #eef3ff;
+}
+
+.credit-limit-card-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+
+.credit-limit-card-icon {
+  width: 38px; height: 38px;
+  background: #eef3ff; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.credit-limit-card-info { flex: 1; }
+.credit-limit-card-name { font-size: 14px; font-weight: 700; color: #1b2559; }
+.credit-limit-card-num { font-size: 11px; color: #7a86b6; }
+
+.credit-limit-status {
+  font-size: 11px; font-weight: 700;
+  padding: 4px 10px; border-radius: 20px;
+}
+.credit-limit-status.safe { background: #d1fae5; color: #065f46; }
+.credit-limit-status.warning { background: #fef3c7; color: #92400e; }
+.credit-limit-status.danger { background: #fee2e2; color: #991b1b; }
+
+.credit-limit-bar-wrap {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+}
+
+.credit-limit-bar {
+  flex: 1; height: 10px;
+  background: #e5e7eb; border-radius: 5px; overflow: hidden;
+}
+
+.credit-limit-bar-fill { height: 100%; border-radius: 5px; transition: width 0.5s; }
+.credit-limit-pct { font-size: 12px; font-weight: 700; color: #7a86b6; width: 32px; text-align: right; }
+
+.credit-limit-amounts {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+}
+
+.credit-limit-amt { text-align: center; }
+.credit-limit-amt span { font-size: 10px; color: #7a86b6; display: block; margin-bottom: 2px; font-weight: 600; text-transform: uppercase; }
+.credit-limit-amt strong { font-size: 13px; font-weight: 700; color: #1b2559; }
+
+/* LIVE LIMIT PREVIEW IN MODAL */
+.live-limit-preview {
+  margin-top: 8px; padding: 10px 14px;
+  border-radius: 10px; border: 1px solid #e5e7eb;
+}
+.live-limit-preview.safe { background: #f0fdf4; border-color: #bbf7d0; }
+.live-limit-preview.warning { background: #fffbeb; border-color: #fde68a; }
+.live-limit-preview.danger { background: #fff1f2; border-color: #fecaca; }
+
+.live-limit-bar {
+  height: 6px; background: #e5e7eb;
+  border-radius: 3px; overflow: hidden; margin-bottom: 8px;
+}
+.live-limit-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+
+.live-limit-text {
+  display: flex; justify-content: space-between; font-size: 12px; color: #374151;
+}
+
+/* ── Debit Card Balance Validation ── */
+
+.settings-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1b2559;
+  margin-bottom: 14px;
+}
+
+.mini-bank-balance {
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 3px;
+}
+
+.balance-ok {
+  color: #047857;
+}
+
+.balance-low {
+  color: #b91c1c;
+}
+
+.low-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 4px;
+}
+
+.debit-card-item {
+  cursor: default;
+}
+
+/* ── Debit balance info in transaction form ── */
+.debit-balance-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.debit-balance-info.sufficient {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #047857;
+}
+
+.debit-balance-info.insufficient {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+/* ── Dashboard bank/debit card section ── */
+.bank-debit-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.bank-debit-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.bank-debit-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1b2559;
+  margin-bottom: 14px;
+}
+
+.bank-debit-list {
+  display: grid;
+  gap: 10px;
+}
+
+.bank-debit-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #f9fafb;
+}
+
+.bank-debit-item.low-balance {
+  background: #fff7f7;
+  border-color: #fecaca;
+}
+
+.bank-debit-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #eef3ff;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.bank-debit-icon.debit {
+  background: #ecfdf5;
+}
+
+.bank-debit-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.bank-debit-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.bank-debit-sub {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.bank-debit-balance {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.bank-debit-balance.ok { color: #047857; }
+.bank-debit-balance.low { color: #b91c1c; }
+
+.low-balance-warning {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-top: 4px;
+}
+
+.empty-bank-debit {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  padding: 18px;
+}
+
+@media (max-width: 768px) {
+  .bank-debit-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── EMI Due Date badges on Loan Cards ── */
+.emi-due-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+.emi-due-row-overdue    { background: #fef2f2; border: 1px solid #fecaca; }
+.emi-due-row-due-today  { background: #fff7ed; border: 1px solid #fed7aa; }
+.emi-due-row-pending    { background: #f0f9ff; border: 1px solid #bae6fd; }
+.emi-due-row-paid       { background: #f0fdf4; border: 1px solid #bbf7d0; }
+
+.emi-due-label { flex: 1; font-weight: 600; }
+
+.emi-due-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.emi-due-overdue    { background: #fecaca; color: #991b1b; }
+.emi-due-due-today  { background: #fed7aa; color: #92400e; }
+.emi-due-pending    { background: #bae6fd; color: #0369a1; }
+.emi-due-paid       { background: #bbf7d0; color: #065f46; }
+
+/* ── Pay EMI Modal ── */
+.emi-pay-modal {
+  width: min(100%, 520px);
+}
+
+.emi-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 14px;
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-top: 12px;
+}
+
+.emi-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.emi-info-item span { font-size: 12px; color: #6b7280; font-weight: 600; text-transform: uppercase; }
+.emi-info-item strong { font-size: 15px; color: #111827; font-weight: 700; }
+.emi-info-amount { font-size: 20px !important; color: #1d4ed8 !important; }
+
+/* ── Balance Preview ── */
+.emi-balance-preview {
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid;
+  margin-top: 12px;
+}
+.preview-ok      { background: #f0fdf4; border-color: #bbf7d0; }
+.preview-warning { background: #fff7ed; border-color: #fed7aa; }
+.preview-danger  { background: #fef2f2; border-color: #fecaca; }
+
+.emi-preview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  padding: 4px 0;
+}
+.emi-preview-row span  { color: #4b5563; }
+.emi-preview-row strong { font-weight: 700; }
+.emi-preview-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0;
+}
+.emi-preview-result span  { font-weight: 700; color: #111827; }
+.emi-preview-result strong { font-size: 16px; }
+
+.emi-alert {
+  margin-top: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.emi-alert-danger  { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.emi-alert-warning { background: #fff7ed; color: #92400e; border: 1px solid #fed7aa; }
+
+/* ── Upcoming EMIs on Dashboard ── */
+.upcoming-emis-card {
+  margin-bottom: 18px;
+}
+
+.upcoming-emi-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.urgent-emi-group {
+  margin-bottom: 4px;
+}
+
+.upcoming-emi-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid;
+}
+
+.emi-row-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+}
+
+.emi-row-info {
+  flex: 1;
+  min-width: 0;
+}
+.emi-row-title { font-size: 14px; font-weight: 700; color: #111827; }
+.emi-row-due   { font-size: 12px; color: #6b7280; margin-top: 2px; }
+
+.emi-row-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.emi-row-amount { font-size: 16px; font-weight: 800; color: #111827; }
+.emi-row-days   { font-size: 12px; font-weight: 700; }
+.emi-row-badge  {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .emi-info-grid { grid-template-columns: 1fr; }
+  .upcoming-emi-row { flex-wrap: wrap; }
+  .emi-row-right { align-items: flex-start; }
+}
+
+/* ── Reports Page ── */
+
+.reports-page { padding-bottom: 32px; }
+
+/* Summary stat cards */
+.rpt-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.rpt-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.rpt-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.rpt-stat-body { min-width: 0; }
+
+.rpt-stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.rpt-stat-value {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.rpt-stat-sub {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 3px;
+}
+
+/* Chart cards */
+.rpt-chart-card {
+  margin-bottom: 16px;
+  padding: 22px;
+}
+
+.rpt-chart-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.rpt-chart-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.rpt-chart-sub {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 3px;
+}
+
+/* Legend */
+.rpt-legend {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.rpt-legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Custom tooltip */
+.rpt-tooltip {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 14px;
+  box-shadow: 0 8px 24px rgba(15,23,42,0.10);
+  font-size: 13px;
+  min-width: 160px;
+}
+
+.rpt-tooltip-label {
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rpt-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 2px 0;
+  color: #374151;
+}
+
+.rpt-tooltip-row strong { margin-left: auto; font-weight: 700; }
+
+.rpt-tooltip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Bottom 2-col grid */
+.rpt-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* Donut legend */
+.rpt-donut-legend {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.rpt-donut-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+}
+
+.rpt-donut-cat { flex: 1; color: #374151; font-weight: 600; }
+.rpt-donut-amt { color: #111827; font-weight: 700; }
+
+/* Top categories list */
+.rpt-category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rpt-cat-row {}
+
+.rpt-cat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.rpt-cat-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.rpt-cat-rank {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.rpt-cat-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rpt-cat-amt { font-size: 13px; font-weight: 700; color: #111827; }
+.rpt-cat-pct { font-size: 11px; color: #9ca3af; font-weight: 600; }
+
+.rpt-cat-bar-bg {
+  height: 7px;
+  background: #f3f4f6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.rpt-cat-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+
+.rpt-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+/* Savings health bar */
+.rpt-savings-card { padding: 22px; }
+
+.rpt-savings-rate-badge {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.rpt-savings-bar-bg {
+  height: 14px;
+  background: #f3f4f6;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.rpt-savings-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.8s ease;
+}
+
+.rpt-savings-ticks {
+  position: relative;
+  height: 16px;
+  margin-bottom: 12px;
+}
+
+.rpt-savings-tick {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.rpt-savings-guide {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+@media (max-width: 1024px) {
+  .rpt-summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .rpt-bottom-grid  { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .rpt-summary-grid { grid-template-columns: 1fr; }
+  .rpt-donut-legend { grid-template-columns: 1fr; }
+  .rpt-savings-guide { flex-direction: column; gap: 6px; }
+}
+
+/* ── Settings Page Redesign ── */
+.settings-layout-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.settings-right-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-section-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: var(--shadow);
+}
+
+.settings-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-section-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.settings-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.settings-section-sub {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.settings-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: #f9fafb;
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+
+.settings-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #111827;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.settings-avatar-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.settings-avatar-email {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* Item list */
+.settings-item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #f9fafb;
+  transition: border-color 140ms;
+}
+
+.settings-item-warn {
+  background: #fff7f7;
+  border-color: #fecaca;
+}
+
+.settings-item-selectable {
+  cursor: pointer;
+}
+.settings-item-selectable:hover {
+  border-color: #c7d2fe;
+  background: #f5f7ff;
+}
+
+.settings-item-active {
+  border-color: #6c8cff !important;
+  background: #eff6ff !important;
+}
+
+.settings-item-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.settings-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-item-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.settings-item-sub {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings-linked-tag {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+.settings-active-chip {
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.settings-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.settings-balance {
+  font-size: 13px;
+  font-weight: 700;
+}
+.settings-balance.balance-ok  { color: #047857; }
+.settings-balance.balance-low { color: #b91c1c; }
+
+.settings-limit {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.settings-warn-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: #b91c1c;
+  background: #fef2f2;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.settings-delete-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: #6b7280;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 140ms, color 140ms;
+}
+.settings-delete-btn:hover {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+/* Add form */
+.settings-add-form {
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.settings-add-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
+}
+
+.settings-form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.settings-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.settings-loading,
+.settings-empty {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  padding: 14px;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.settings-warning-text {
+  font-size: 12px;
+  color: #dc2626;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+@media (max-width: 1024px) {
+  .settings-layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .settings-form-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── EMI Reminder Banner ── */
+.emi-banner-stack {
+  position: sticky;
+  top: 0;
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+}
+
+.emi-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Critical — red, no dismiss */
+.emi-banner-critical {
+  background: #dc2626;
+  color: #fff;
+  border-bottom: 1px solid #b91c1c;
+  animation: bannerPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes bannerPulse {
+  0%, 100% { background: #dc2626; }
+  50%       { background: #b91c1c; }
+}
+
+/* Warning — amber, dismissible */
+.emi-banner-warning {
+  background: #d97706;
+  color: #fff;
+  border-bottom: 1px solid #b45309;
+}
+
+.emi-banner-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.emi-banner-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.emi-banner-title {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.emi-banner-detail {
+  opacity: 0.92;
+}
+
+.emi-banner-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  white-space: nowrap;
+  border: 1px solid rgba(255,255,255,0.35);
+  transition: background 150ms;
+  text-decoration: none;
+}
+
+.emi-banner-btn:hover {
+  background: rgba(255,255,255,0.32);
+}
+
+.emi-banner-close {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 150ms;
+}
+
+.emi-banner-close:hover {
+  background: rgba(255,255,255,0.35);
+}
+
+@media (max-width: 640px) {
+  .emi-banner {
+    padding: 10px 14px;
+    flex-wrap: wrap;
+  }
+  .emi-banner-body { flex-direction: column; gap: 2px; }
+}
+
+/* ── EMI paid this month notice ── */
+.emi-paid-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #065f46;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* ── Advance payment button ── */
+.advance-pay-btn {
+  border-color: #6c8cff !important;
+  color: #1d4ed8 !important;
+  font-weight: 700;
 }

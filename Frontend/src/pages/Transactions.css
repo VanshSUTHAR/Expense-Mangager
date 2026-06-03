@@ -1,0 +1,152 @@
+.transaction-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  padding: 24px;
+  overflow: hidden;
+}
+
+.transaction-edit-modal {
+  width: min(620px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  margin: 0;
+  overflow-y: auto;
+}
+
+.credit-limit-card-footer {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.credit-limit-card-footer .credit-bill-full-pay-btn {
+  width: 100%;
+  min-height: 40px;
+  margin: 0;
+  padding: 10px 12px;
+  white-space: nowrap;
+}
+
+.transaction-payment-swal {
+  width: min(440px, calc(100vw - 32px)) !important;
+  border-radius: 14px !important;
+  padding: 22px !important;
+}
+
+.transaction-payment-swal .swal2-title {
+  padding: 0;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.transaction-payment-swal-body {
+  margin: 16px 0 0 !important;
+  text-align: left !important;
+}
+
+.transaction-payment-swal-body .swal2-input {
+  box-sizing: border-box;
+  width: 100% !important;
+  max-width: 100%;
+  margin: 0;
+  border-radius: 8px;
+}
+
+.transaction-payment-swal .swal2-actions {
+  width: 100%;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.transaction-payment-swal-confirm,
+.transaction-payment-swal-cancel {
+  flex: 1;
+  min-height: 42px;
+  margin: 0 !important;
+  border-radius: 8px !important;
+  font-weight: 700;
+}
+
+.filters.card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  margin: 18px 0;
+  border-radius: 18px;
+}
+
+.filters.card .filter-select,
+.filters.card .btn-secondary {
+  min-height: 46px;
+  max-width: 100%;
+}
+
+.filters.card .filter-select {
+  flex: 1 1 260px;
+  min-width: 220px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  color: #0f172a;
+}
+
+.filters.card .filter-select:focus {
+  outline: none;
+  border-color: rgba(108, 140, 255, 0.65);
+  box-shadow: 0 0 0 4px rgba(108, 140, 255, 0.12);
+}
+
+.filters.card .btn-secondary {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding-inline: 18px;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .transaction-modal-overlay {
+    padding: 12px;
+  }
+
+  .transaction-edit-modal {
+    width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+  }
+
+  .credit-limit-card-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .transaction-payment-swal {
+    padding: 18px !important;
+  }
+
+  .transaction-payment-swal .swal2-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .transaction-payment-swal-confirm,
+  .transaction-payment-swal-cancel {
+    width: 100%;
+  }
+
+  .filters.card {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .filters.card .btn-secondary {
+    width: 100%;
+    justify-self: stretch;
+  }
+}

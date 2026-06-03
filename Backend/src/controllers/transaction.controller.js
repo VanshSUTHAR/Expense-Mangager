@@ -1,6 +1,8 @@
 const Transaction = require('../models/Transaction');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const BankAccount = require('../models/BankAccount');
+const DebitCard = require('../models/DebitCard');
 const { syncCreditCardStatements } = require('./creditCardBill.controller');
 
 // @GET /api/transactions
@@ -62,7 +64,9 @@ const getTransactions = async (req, res) => {
       accountNumber,
       tags,
       isRecurring,
-      recurringFrequency
+      recurringFrequency,
+      debitCardId,
+      bankAccountId
     } = req.body;
 
      const payload = {
@@ -88,7 +92,57 @@ const getTransactions = async (req, res) => {
       });
     }
 
+    // ── Balance guard: debit card expense ──
+    let linkedBankAccount = null;
+    if (type === 'expense' && debitCardId) {
+      const debitCard = await DebitCard.findOne({ _id: debitCardId, user: req.user._id })
+        .populate('linkedBankAccount');
+      if (!debitCard) {
+        return res.status(404).json({ success: false, message: 'Debit card not found' });
+      }
+      linkedBankAccount = debitCard.linkedBankAccount;
+      if (Number(amount) > linkedBankAccount.balance) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient Balance. Your account contains only ₹${linkedBankAccount.balance.toLocaleString('en-IN')}.`
+        });
+      }
+    }
+
+    // ── Balance guard: direct bank account expense ──
+    let directBankAccount = null;
+    if (type === 'expense' && bankAccountId && !debitCardId) {
+      directBankAccount = await BankAccount.findOne({ _id: bankAccountId, user: req.user._id });
+      if (!directBankAccount) {
+        return res.status(404).json({ success: false, message: 'Bank account not found' });
+      }
+      if (Number(amount) > directBankAccount.balance) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient Balance. Your account contains only ₹${directBankAccount.balance.toLocaleString('en-IN')}.`
+        });
+      }
+    }
+
     const transaction = await Transaction.create(payload);
+
+    // ── Deduct: debit card expense ──
+    if (linkedBankAccount) {
+      await BankAccount.findByIdAndUpdate(linkedBankAccount._id, { $inc: { balance: -Number(amount) } });
+    }
+
+    // ── Deduct: direct bank account expense ──
+    if (directBankAccount) {
+      await BankAccount.findByIdAndUpdate(directBankAccount._id, { $inc: { balance: -Number(amount) } });
+    }
+
+    // ── Credit: income to bank account ──
+    if (type === 'income' && bankAccountId) {
+      await BankAccount.findOneAndUpdate(
+        { _id: bankAccountId, user: req.user._id },
+        { $inc: { balance: Number(amount) } }
+      );
+    }
     await syncCreditCardStatements(req.user._id);
 
     // Budget Alert

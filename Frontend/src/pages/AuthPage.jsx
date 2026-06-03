@@ -78,7 +78,7 @@ export default function AuthPage() {
               <label>Email</label>
               <input
                 className="input"
-                type="concat123@gmail.com"
+                type="email"
                 placeholder="john@example.com"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -89,7 +89,7 @@ export default function AuthPage() {
               <label>Password</label>
               <input
                 className="input"
-                type="123321"
+                type="password"
                 placeholder="••••••••"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}

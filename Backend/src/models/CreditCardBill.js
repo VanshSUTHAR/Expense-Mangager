@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-
+ 
 const creditCardBillSchema = new mongoose.Schema(
   {
     user: {
@@ -29,6 +29,10 @@ const creditCardBillSchema = new mongoose.Schema(
       type: Number,
       required: true
     },
+    paidAmount: {
+      type: Number,
+      default: 0
+    },
     transactionCount: {
       type: Number,
       default: 0
@@ -43,7 +47,7 @@ const creditCardBillSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Pending', 'Paid', 'Overdue'],
+      enum: ['Pending', 'Paid', 'Overdue', 'EMI'],
       default: 'Pending'
     },
     paidAt: {
@@ -84,5 +88,5 @@ const creditCardBillSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
+ 
 module.exports = mongoose.model('CreditCardBill', creditCardBillSchema);

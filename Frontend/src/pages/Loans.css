@@ -1,0 +1,38 @@
+.loan-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  padding: 24px;
+  overflow: hidden;
+}
+
+.loan-edit-modal {
+  width: min(620px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  margin: 0;
+  overflow-y: auto;
+}
+
+.loan-calc-modal {
+  width: min(440px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  margin: 0;
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .loan-modal-overlay {
+    padding: 12px;
+  }
+
+  .loan-edit-modal,
+  .loan-calc-modal {
+    width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+  }
+}
