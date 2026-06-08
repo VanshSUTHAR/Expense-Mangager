@@ -164,11 +164,9 @@ export default function Reports() {
         )}
       </div>
 
-      {/* Category Donut + Top Categories list */}
-      <div className="rpt-bottom-grid">
+       <div className="rpt-bottom-grid">
 
-        {/* Donut chart */}
-        <div className="card rpt-chart-card">
+         <div className="card rpt-chart-card">
           <div className="rpt-chart-header">
             <div>
               <div className="rpt-chart-title">Spending by Category</div>
@@ -205,8 +203,7 @@ export default function Reports() {
           )}
         </div>
 
-        {/* Top spending categories — progress bars */}
-        <div className="card rpt-chart-card">
+         <div className="card rpt-chart-card">
           <div className="rpt-chart-header">
             <div>
               <div className="rpt-chart-title"><FaShoppingCart size={13} /> Top Spending Categories</div>
@@ -248,8 +245,7 @@ export default function Reports() {
 
       </div>
 
-      {/* Savings rate bar */}
-      {income > 0 && (
+       {income > 0 && (
         <div className="card rpt-savings-card">
           <div className="rpt-chart-header">
             <div>

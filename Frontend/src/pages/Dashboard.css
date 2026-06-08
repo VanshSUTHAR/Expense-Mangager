@@ -1,0 +1,17 @@
+.bank-debit-section {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  width: 100%;
+}
+
+.bank-debit-section > .bank-debit-card {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .bank-debit-section {
+    flex-direction: column;
+  }
+}

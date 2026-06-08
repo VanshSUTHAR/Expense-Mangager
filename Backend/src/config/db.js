@@ -1,8 +1,7 @@
 const mongoose = require('mongoose');
 const dns = require('dns');
 
-// System DNS is broken; force Google's public DNS so Atlas SRV records resolve
-dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+ dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
 
 const connectDB = async () => {
   try {
@@ -13,8 +12,7 @@ const connectDB = async () => {
     process.exit(1);
   }
 
-  // Remove legacy index if it exists — non-fatal if collection doesn't exist yet
-  try {
+   try {
     const collection = mongoose.connection.db.collection('creditcardbills');
     const indexes = await collection.indexes();
     const hasLegacyTransactionIndex = indexes.some((index) => index.name === 'transaction_1');
@@ -23,8 +21,7 @@ const connectDB = async () => {
       console.log('✅ Removed legacy credit card bill index: transaction_1');
     }
   } catch {
-    // Collection does not exist yet — safe to ignore
-  }
+   }
 };
 
 module.exports = connectDB;

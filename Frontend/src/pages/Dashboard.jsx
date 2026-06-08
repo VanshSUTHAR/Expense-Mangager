@@ -9,16 +9,22 @@ import {
   FaCreditCard, FaUniversity, FaWallet, FaExclamationTriangle,
 } from 'react-icons/fa';
 import '../index.css';
+import './Dashboard.css';
 
 const LOW_BALANCE_THRESHOLD = 1000;
 const COLORS = ['#f953c6', '#4facfe', '#43e97b', '#fee140', '#a18cd1', '#f77062'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+ const savedCards = JSON.parse(localStorage.getItem("cards")) || [];
+ 
+const cardsWithLimit = savedCards.filter(
+    (card) => Number(card.creditLimit) > 0,
+  );
 
 const EMI_STATUS_CONFIG = {
-  Overdue:    { bg: '#fef2f2', border: '#fecaca', color: '#991b1b', icon: '🔴' },
-  'Due Today':{ bg: '#fff7ed', border: '#fed7aa', color: '#92400e', icon: '⚡' },
-  Pending:    { bg: '#f0f9ff', border: '#bae6fd', color: '#0369a1', icon: '🕐' },
-  Paid:       { bg: '#f0fdf4', border: '#bbf7d0', color: '#065f46', icon: '✅' },
+  Overdue: { bg: '#fef2f2', border: '#fecaca', color: '#991b1b', },
+  'Due Today': { bg: '#fff7ed', border: '#fed7aa', color: '#92400e', },
+  Pending: { bg: '#f0f9ff', border: '#bae6fd', color: '#0369a1', },
+  Paid: { bg: '#f0fdf4', border: '#bbf7d0', color: '#065f46', },
 };
 
 export default function Dashboard() {
@@ -28,8 +34,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [bankAccounts, setBankAccounts] = useState([]);
   const [debitCards, setDebitCards] = useState([]);
+  const [creditCardBills, setCreditCardBills] = useState([]);
   const [upcomingEMIs, setUpcomingEMIs] = useState([]);
-  const alertedRef = useRef(false);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -48,24 +54,6 @@ export default function Dashboard() {
       setDebitCards(debitRes.data.cards || []);
       const emis = emiRes.data.emis || [];
       setUpcomingEMIs(emis);
-
-      // Fire toast alerts once per session
-      if (!alertedRef.current) {
-        alertedRef.current = true;
-        emis.forEach((emi) => {
-          if (emi.status === 'Due Today') {
-            setTimeout(() => toast.error(
-              `EMI Due Today! ₹${Number(emi.emiAmount).toLocaleString('en-IN')} payment pending for "${emi.title}".`,
-              { duration: 6000, style: { background: '#fef2f2', color: '#991b1b' } }
-            ), 600);
-          } else if (emi.status === 'Overdue') {
-            setTimeout(() => toast.error(
-              `Overdue EMI Alert! "${emi.title}" EMI was due on ${new Date(emi.nextDueDate).toLocaleDateString('en-IN')}.`,
-              { duration: 7000, style: { background: '#fef2f2', color: '#991b1b' } }
-            ), 1000);
-          }
-        });
-      }
     } finally {
       setLoading(false);
     }
@@ -84,7 +72,20 @@ export default function Dashboard() {
   );
 
   const urgentEMIs = upcomingEMIs.filter(e => e.status === 'Overdue' || e.status === 'Due Today');
-  const otherEMIs  = upcomingEMIs.filter(e => e.status !== 'Overdue' && e.status !== 'Due Today');
+  const otherEMIs = upcomingEMIs.filter(e => e.status !== 'Overdue' && e.status !== 'Due Today');
+
+const getCardLimitInfo = (card) => {
+  const limit = Number(card.creditLimit) || 0;
+
+  return {
+    limit,
+    used: 0,
+    available: limit,
+    usedPercent: 0,
+  };
+};
+
+const getCardBill = () => null;
 
   return (
     <div className="dashboard fade-in">
@@ -96,7 +97,6 @@ export default function Dashboard() {
         <a href="/transactions" className="btn btn-primary">+ Add Transaction</a>
       </div>
 
-      {/* ── Stats ── */}
       <div className="stats-grid">
         <div className="stat-card stat-balance">
           <div>
@@ -118,20 +118,9 @@ export default function Dashboard() {
             <div className="stat-value amount-negative">₹{expense.toLocaleString()}</div>
           </div>
         </div>
-        <div className="stat-card stat-budget">
-          <div>
-            <div className="stat-label">Budget Used</div>
-            <div className="stat-value">{user?.monthlyBudget ? `${budgetUsed.toFixed(0)}%` : 'Not Set'}</div>
-            {user?.monthlyBudget > 0 && (
-              <div className="budget-bar">
-                <div className="budget-fill" style={{ width: `${Math.min(budgetUsed, 100)}%`, background: budgetUsed > 80 ? 'var(--grad-6)' : 'var(--grad-3)' }} />
-              </div>
-            )}
-          </div>
-        </div>
+
       </div>
 
-      {/* ── Bank Accounts & Debit Cards ── */}
       {(bankAccounts.length > 0 || debitCards.length > 0) && (
         <div className="bank-debit-section">
           <div className="bank-debit-card">
@@ -185,10 +174,111 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+          <div className="bank-debit-card">
+            <h3><FaCreditCard size={15} color="#f59e0b" /> Credit Cards</h3>
+            {cardsWithLimit.length > 0 && (
+        <div className="card credit-limit-section">
+          <h3 className="credit-limit-title">
+            <FaCreditCard size={16} /> Credit Card Limits
+          </h3>
+          <div className="credit-limit-grid">
+            {cardsWithLimit.map((card, i) => {
+              const info = getCardLimitInfo(card);
+              const cardBill = getCardBill(card);
+
+              return (
+                <div key={i} className="credit-limit-card">
+                  <div className="credit-limit-card-header">
+                    <div className="credit-limit-card-icon">
+                      <FaCreditCard size={18} color="#6c8cff" />
+                    </div>
+                    <div className="credit-limit-card-info">
+                      <div className="credit-limit-card-name">
+                        {card.cardName}
+                      </div>
+                      <div className="credit-limit-card-num">
+                        ••••{card.cardNumber.slice(-4)}
+                      </div>
+                    </div>
+                    <div
+                      className={`credit-limit-status ${info.usedPercent >= 90 ? "danger" : info.usedPercent >= 70 ? "warning" : "safe"}`}
+                    >
+                      {info.usedPercent >= 90
+                        ? "Critical"
+                        : info.usedPercent >= 70
+                          ? " High"
+                          : " Good"}
+                    </div>
+                  </div>
+
+                  <div className="credit-limit-bar-wrap">
+                    <div className="credit-limit-bar">
+                      <div
+                        className="credit-limit-bar-fill"
+                        style={{
+                          width: `${info.usedPercent}%`,
+                          background:
+                            info.usedPercent >= 90
+                              ? "linear-gradient(90deg, #ef4444, #dc2626)"
+                              : info.usedPercent >= 70
+                                ? "linear-gradient(90deg, #f59e0b, #d97706)"
+                                : "linear-gradient(90deg, #6c8cff, #8ea6ff)",
+                        }}
+                      />
+                    </div>
+                    <span className="credit-limit-pct">
+                      {info.usedPercent.toFixed(0)}%
+                    </span>
+                  </div>
+
+                  <div className="credit-limit-amounts">
+                    <div className="credit-limit-amt">
+                      <span>Total Limit</span>
+                      <strong>₹{info.limit.toLocaleString()}</strong>
+                    </div>
+                    <div className="credit-limit-amt">
+                      <span>Used</span>
+                      <strong style={{ color: "#dc2626" }}>
+                        ₹{info.used.toLocaleString()}
+                      </strong>
+                    </div>
+                    <div className="credit-limit-amt">
+                      <span>Available</span>
+                      <strong style={{ color: "#059669" }}>
+                        ₹{info.available.toLocaleString()}
+                      </strong>
+                    </div>
+                  </div>
+
+                  {cardBill && cardBill.status !== "Paid" && (
+                    <div className="credit-limit-card-footer">
+                      <button
+                        type="button"
+                        className="btn btn-secondary credit-bill-full-pay-btn"
+                        onClick={() => handlePayBill(cardBill)}
+                      >
+                        Pay bill
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-primary credit-bill-full-pay-btn"
+                        onClick={() => handlePayFullBill(cardBill)}
+                      >
+                        Full Payment
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* ── Upcoming EMIs ── */}
+          </div>
+        </div>
+      )}
+
       {upcomingEMIs.length > 0 && (
         <div className="card upcoming-emis-card">
           <div className="section-header">
@@ -214,7 +304,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Charts ── */}
       <div className="charts-grid">
         <div className="card chart-card">
           <h3>6-Month Trend</h3>
@@ -268,7 +357,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Recent Transactions ── */}
       <div className="card">
         <div className="section-header">
           <h3>Recent Transactions</h3>
@@ -297,14 +385,13 @@ export default function Dashboard() {
   );
 }
 
-// ─── EMI Row Component ────────────────────────────────────────────────────────
 function EMIRow({ emi }) {
   const cfg = EMI_STATUS_CONFIG[emi.status] || EMI_STATUS_CONFIG.Pending;
   const dueLabel =
-    emi.status === 'Overdue'    ? `${Math.abs(emi.daysRemaining)}d overdue` :
-    emi.status === 'Due Today'  ? 'Due Today!' :
-    emi.status === 'Paid'       ? 'Paid' :
-    `${emi.daysRemaining}d left`;
+    emi.status === 'Overdue' ? `${Math.abs(emi.daysRemaining)}d overdue` :
+      emi.status === 'Due Today' ? 'Due Today!' :
+        emi.status === 'Paid' ? 'Paid' :
+          `${emi.daysRemaining}d left`;
 
   return (
     <div className="upcoming-emi-row" style={{ background: cfg.bg, borderColor: cfg.border }}>
@@ -325,7 +412,6 @@ function EMIRow({ emi }) {
   );
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return 'Morning';

@@ -29,9 +29,19 @@ export default function Settings() {
   const [addingDebit, setAddingDebit] = useState(false);
 
   const [creditCards, setCreditCards] = useState(JSON.parse(localStorage.getItem("cards")) || []);
-  const [newCreditCard, setNewCreditCard] = useState({ cardName: "", cardNumber: "", creditLimit: "" });
+  const [newCreditCard, setNewCreditCard] = useState({
+    cardName: "",
+    cardNumber: "",
+    creditLimit: "",
+    cvv: "",
+    expiryMonth: "",
+    expiryYear: "",
+  });
   const [selectedCard, setSelectedCard] = useState(localStorage.getItem("selectedCard") || "");
   const [addingCredit, setAddingCredit] = useState(false);
+
+  // Track which card's CVV is visible
+  const [revealedCvv, setRevealedCvv] = useState(null);
 
   useEffect(() => { fetchBankAccounts(); fetchDebitCards(); }, []);
 
@@ -116,13 +126,32 @@ export default function Settings() {
       toast.error("Card name and number are required");
       return;
     }
+    if (newCreditCard.expiryMonth && newCreditCard.expiryYear) {
+      const now = new Date();
+      const expiry = new Date(
+        parseInt("20" + newCreditCard.expiryYear),
+        parseInt(newCreditCard.expiryMonth) - 1,
+        1
+      );
+      if (expiry < now) {
+        toast.error("Card is already expired");
+        return;
+      }
+    }
     const updated = [
-      { cardName: newCreditCard.cardName.trim(), cardNumber: newCreditCard.cardNumber.trim(), creditLimit: Number(newCreditCard.creditLimit) || 0 },
+      {
+        cardName: newCreditCard.cardName.trim(),
+        cardNumber: newCreditCard.cardNumber.trim(),
+        creditLimit: Number(newCreditCard.creditLimit) || 0,
+        cvv: newCreditCard.cvv.trim(),
+        expiryMonth: newCreditCard.expiryMonth,
+        expiryYear: newCreditCard.expiryYear,
+      },
       ...creditCards,
     ];
     setCreditCards(updated);
     localStorage.setItem("cards", JSON.stringify(updated));
-    setNewCreditCard({ cardName: "", cardNumber: "", creditLimit: "" });
+    setNewCreditCard({ cardName: "", cardNumber: "", creditLimit: "", cvv: "", expiryMonth: "", expiryYear: "" });
     toast.success("Credit card added");
   };
 
@@ -147,6 +176,41 @@ export default function Settings() {
     } finally { setSaving(false); }
   };
 
+  // Generate month options
+  const months = [
+    "01", "02", "03", "04", "05", "06",
+    "07", "08", "09", "10", "11", "12",
+  ];
+
+  // Generate year options: current year to +15
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 16 }, (_, i) =>
+    String(currentYear + i).slice(-2)
+  );
+
+  const isExpired = (card) => {
+    if (!card.expiryMonth || !card.expiryYear) return false;
+    const now = new Date();
+    const expiry = new Date(
+      parseInt("20" + card.expiryYear),
+      parseInt(card.expiryMonth) - 1,
+      1
+    );
+    return expiry < now;
+  };
+
+  const isExpiringSoon = (card) => {
+    if (!card.expiryMonth || !card.expiryYear) return false;
+    const now = new Date();
+    const expiry = new Date(
+      parseInt("20" + card.expiryYear),
+      parseInt(card.expiryMonth) - 1,
+      1
+    );
+    const diff = (expiry - now) / (1000 * 60 * 60 * 24 * 30);
+    return diff >= 0 && diff <= 2;
+  };
+
   return (
     <div className="settings-page fade-in">
       <div className="page-header">
@@ -160,7 +224,7 @@ export default function Settings() {
 
       <div className="settings-layout-grid">
 
-        {/* ── LEFT: Profile ── */}
+        {/* Profile */}
         <div className="settings-section-card">
           <div className="settings-section-header">
             <div className="settings-section-icon" style={{ background: "#eff6ff" }}>
@@ -208,7 +272,6 @@ export default function Settings() {
           </form>
         </div>
 
-        {/* ── RIGHT: stacked cards ── */}
         <div className="settings-right-stack">
 
           {/* Bank Accounts */}
@@ -246,8 +309,7 @@ export default function Settings() {
                         </div>
                         {isLow && <div className="settings-warn-tag">⚠️ Low</div>}
                       </div>
-                      <button className="settings-delete-btn" onClick={() => handleDeleteBank(bank._id)}
-                        title="Remove">
+                      <button className="settings-delete-btn" onClick={() => handleDeleteBank(bank._id)} title="Remove">
                         <FaTrash size={12} />
                       </button>
                     </div>
@@ -323,8 +385,7 @@ export default function Settings() {
                         </div>
                         {isLow && <div className="settings-warn-tag">⚠️ Low</div>}
                       </div>
-                      <button className="settings-delete-btn" onClick={() => handleDeleteDebitCard(card._id)}
-                        title="Remove">
+                      <button className="settings-delete-btn" onClick={() => handleDeleteDebitCard(card._id)} title="Remove">
                         <FaTrash size={12} />
                       </button>
                     </div>
@@ -387,38 +448,74 @@ export default function Settings() {
               <div className="settings-empty">No credit cards added yet</div>
             ) : (
               <div className="settings-item-list">
-                {creditCards.map((card, i) => (
-                  <div key={i}
-                    className={`settings-item settings-item-selectable ${selectedCard === card.cardName ? "settings-item-active" : ""}`}
-                    onClick={() => {
-                      const next = selectedCard === card.cardName ? "" : card.cardName;
-                      setSelectedCard(next);
-                      next ? localStorage.setItem("selectedCard", next) : localStorage.removeItem("selectedCard");
-                    }}>
-                    <div className="settings-item-icon" style={{ background: "#faf5ff" }}>
-                      <FaCreditCard size={14} color="#7c3aed" />
-                    </div>
-                    <div className="settings-item-info">
-                      <div className="settings-item-name">
-                        {card.cardName}
-                        {selectedCard === card.cardName && <span className="settings-active-chip">Active</span>}
+                {creditCards.map((card, i) => {
+                  const expired = isExpired(card);
+                  const expiringSoon = isExpiringSoon(card);
+                  return (
+                    <div
+                      key={i}
+                      className={`settings-item settings-item-selectable ${selectedCard === card.cardName ? "settings-item-active" : ""} ${expired ? "settings-item-expired" : ""}`}
+                      onClick={() => {
+                        const next = selectedCard === card.cardName ? "" : card.cardName;
+                        setSelectedCard(next);
+                        next ? localStorage.setItem("selectedCard", next) : localStorage.removeItem("selectedCard");
+                      }}
+                    >
+                      <div className="settings-item-icon" style={{ background: "#faf5ff" }}>
+                        <FaCreditCard size={14} color="#7c3aed" />
                       </div>
-                      <div className="settings-item-sub">••••{card.cardNumber.slice(-4)}</div>
+
+                      <div className="settings-item-info">
+                        <div className="settings-item-name">
+                          {card.cardName}
+                          {selectedCard === card.cardName && <span className="settings-active-chip">Active</span>}
+                          {expired && <span className="settings-expired-chip">Expired</span>}
+                          {!expired && expiringSoon && <span className="settings-expiring-chip">Expiring Soon</span>}
+                        </div>
+                        <div className="settings-item-sub">••••{card.cardNumber.slice(-4)}</div>
+
+                        {/* Expiry + CVV row */}
+                        <div className="cc-meta-row">
+                          {(card.expiryMonth && card.expiryYear) && (
+                            <span className={`cc-expiry-tag ${expired ? "expired" : expiringSoon ? "soon" : ""}`}>
+                              📅 {card.expiryMonth}/{card.expiryYear}
+                            </span>
+                          )}
+                          {card.cvv && (
+                            <span
+                              className="cc-cvv-tag"
+                              onClick={e => {
+                                e.stopPropagation();
+                                setRevealedCvv(revealedCvv === i ? null : i);
+                              }}
+                              title="Click to reveal CVV"
+                            >
+                              🔒 CVV: {revealedCvv === i ? card.cvv : "•••"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="settings-item-right">
+                        {card.creditLimit > 0 && (
+                          <div className="settings-limit">Limit: ₹{Number(card.creditLimit).toLocaleString()}</div>
+                        )}
+                      </div>
+
+                      <button
+                        className="settings-delete-btn"
+                        onClick={e => { e.stopPropagation(); handleDeleteCreditCard(i); }}
+                        title="Remove"
+                      >
+                        <FaTrash size={12} />
+                      </button>
                     </div>
-                    <div className="settings-item-right">
-                      {card.creditLimit > 0 && (
-                        <div className="settings-limit">Limit: ₹{Number(card.creditLimit).toLocaleString()}</div>
-                      )}
-                    </div>
-                    <button className="settings-delete-btn" onClick={e => { e.stopPropagation(); handleDeleteCreditCard(i); }}
-                      title="Remove">
-                      <FaTrash size={12} />
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
+            {/* Add Credit Card Form */}
             <div className="settings-add-form">
               <div className="settings-add-title"><FaPlus size={11} /> Add Credit Card</div>
               <div className="settings-form-grid-3">
@@ -430,9 +527,18 @@ export default function Settings() {
                 </div>
                 <div className="form-group">
                   <label>Card Number</label>
-                  <input className="input" placeholder="e.g. 4111111111111111"
+                  <input
+                    className="input"
+                    placeholder="e.g. 4111 1111 1111 1111"
+                    maxLength={19}
                     value={newCreditCard.cardNumber}
-                    onChange={e => setNewCreditCard({ ...newCreditCard, cardNumber: e.target.value })} />
+                    onChange={e => {
+                      // Auto-format with spaces every 4 digits
+                      const raw = e.target.value.replace(/\D/g, "").slice(0, 16);
+                      const formatted = raw.replace(/(.{4})/g, "$1 ").trim();
+                      setNewCreditCard({ ...newCreditCard, cardNumber: formatted });
+                    }}
+                  />
                 </div>
                 <div className="form-group">
                   <label>Credit Limit (₹)</label>
@@ -441,13 +547,49 @@ export default function Settings() {
                     onChange={e => setNewCreditCard({ ...newCreditCard, creditLimit: e.target.value })} />
                 </div>
               </div>
+
+              {/* Expiry + CVV row */}
+              <div className="settings-form-grid-3 cc-extra-row">
+                <div className="form-group">
+                  <label>Expiry Month</label>
+                  <select className="input" value={newCreditCard.expiryMonth}
+                    onChange={e => setNewCreditCard({ ...newCreditCard, expiryMonth: e.target.value })}>
+                    <option value="">MM</option>
+                    {months.map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Expiry Year</label>
+                  <select className="input" value={newCreditCard.expiryYear}
+                    onChange={e => setNewCreditCard({ ...newCreditCard, expiryYear: e.target.value })}>
+                    <option value="">YY</option>
+                    {years.map(y => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>CVV</label>
+                  <input
+                    className="input"
+                    type="password"
+                    placeholder="•••"
+                    maxLength={4}
+                    value={newCreditCard.cvv}
+                    onChange={e => setNewCreditCard({ ...newCreditCard, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                  />
+                </div>
+              </div>
+
               <button className="btn btn-secondary settings-add-btn" onClick={handleAddCreditCard}>
                 <FaPlus size={11} /> Add Credit Card
               </button>
             </div>
           </div>
 
-        </div>{/* end right stack */}
+        </div>
       </div>
     </div>
   );

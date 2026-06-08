@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import '../index.css';
@@ -253,59 +254,43 @@ export default function Goals() {
         </>
       )}
 
-      {showModal && (
+      {showModal && createPortal(
         <div
           className="modal-overlay"
-          onClick={(e) =>
-            e.target === e.currentTarget && setShowModal(false)
-          }
+          onClick={(e) => e.target === e.currentTarget && setShowModal(false)}
         >
-          <div className="modal glass fade-in">
+          <div className="modal glass fade-in" style={{ width: 'min(100%, 520px)' }}>
             <div className="modal-header">
-              <h3>Create New Goal</h3>
-
-              <button
-                className="modal-close"
-                onClick={() => setShowModal(false)}
-              >
-                ✕
-              </button>
+              <h3>🎯 Create New Goal</h3>
+              <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
             </div>
 
             <form onSubmit={handleSubmit}>
-              <div className="icon-picker">
-                {ICONS.map((item) => (
-                  <button
-                    type="button"
-                    key={item.name}
-                    className={`icon-btn ${
-                      form.icon === item.name ? 'active' : ''
-                    }`}
-                    onClick={() =>
-                      setForm({
-                        ...form,
-                        icon: item.name,
-                      })
-                    }
-                  >
-                    {item.icon}
-                  </button>
-                ))}
+              {/* Icon picker — compact 6-column grid */}
+              <div className="form-group">
+                <label>Icon</label>
+                <div className="goal-icon-grid">
+                  {ICONS.map((item) => (
+                    <button
+                      type="button"
+                      key={item.name}
+                      className={`icon-btn ${form.icon === item.name ? 'active' : ''}`}
+                      onClick={() => setForm({ ...form, icon: item.name })}
+                      title={item.name}
+                    >
+                      {item.icon}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="form-group">
                 <label>Goal Title</label>
-
                 <input
                   className="input"
                   placeholder="e.g. Buy a car"
                   value={form.title}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      title: e.target.value,
-                    })
-                  }
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
                   required
                 />
               </div>
@@ -313,147 +298,97 @@ export default function Goals() {
               <div className="form-row">
                 <div className="form-group">
                   <label>Target Amount (₹)</label>
-
                   <input
                     className="input"
                     type="number"
                     placeholder="50000"
                     value={form.targetAmount}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        targetAmount: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setForm({ ...form, targetAmount: e.target.value })}
                     required
                   />
                 </div>
-
                 <div className="form-group">
                   <label>Starting Amount (₹)</label>
-
                   <input
                     className="input"
                     type="number"
                     placeholder="0"
                     value={form.currentAmount}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        currentAmount: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setForm({ ...form, currentAmount: e.target.value })}
                   />
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Target Date</label>
-
-                <input
-                  className="input"
-                  type="date"
-                  value={form.deadline}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      deadline: e.target.value,
-                    })
-                  }
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Notes</label>
-
-                <input
-                  className="input"
-                  placeholder="Optional notes..."
-                  value={form.notes}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      notes: e.target.value,
-                    })
-                  }
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Target Date</label>
+                  <input
+                    className="input"
+                    type="date"
+                    value={form.deadline}
+                    onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Notes</label>
+                  <input
+                    className="input"
+                    placeholder="Optional notes..."
+                    value={form.notes}
+                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  />
+                </div>
               </div>
 
               <div className="modal-actions">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowModal(false)}
-                >
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
                   Cancel
                 </button>
-
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                >
-                  <FaBullseye />
-                  Create Goal
+                <button type="submit" className="btn btn-primary">
+                  <FaBullseye /> Create Goal
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {showFundModal && (
+      {showFundModal && createPortal(
         <div
           className="modal-overlay"
-          onClick={(e) =>
-            e.target === e.currentTarget &&
-            setShowFundModal(null)
-          }
+          onClick={(e) => e.target === e.currentTarget && setShowFundModal(null)}
         >
-          <div
-            className="modal glass fade-in"
-            style={{ maxWidth: 380 }}
-          >
+          <div className="modal glass fade-in" style={{ width: 'min(100%, 380px)' }}>
             <div className="modal-header">
-              <h3>Add Funds</h3>
-
-              <button
-                className="modal-close"
-                onClick={() => setShowFundModal(null)}
-              >
-                ✕
-              </button>
+              <h3>💰 Add Funds</h3>
+              <button className="modal-close" onClick={() => setShowFundModal(null)}>✕</button>
             </div>
 
             <div className="form-group">
               <label>Amount (₹)</label>
-
               <input
                 className="input"
                 type="number"
-                placeholder="Enter amount"
+                placeholder="Enter amount to add"
                 value={fundAmount}
                 onChange={(e) => setFundAmount(e.target.value)}
+                autoFocus
               />
             </div>
 
             <div className="modal-actions">
-              <button
-                className="btn btn-secondary"
-                onClick={() => setShowFundModal(null)}
-              >
+              <button className="btn btn-secondary" onClick={() => setShowFundModal(null)}>
                 Cancel
               </button>
-
-              <button
-                className="btn btn-primary"
-                onClick={handleAddFunds}
-              >
-                Add ₹{fundAmount || '0'}
+              <button className="btn btn-primary" onClick={handleAddFunds}>
+                Add ₹{Number(fundAmount || 0).toLocaleString('en-IN')}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

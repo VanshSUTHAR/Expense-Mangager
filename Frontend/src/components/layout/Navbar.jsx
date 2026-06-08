@@ -1,17 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import {
-  Bell,
-  CreditCard,
-  Home,
-  PieChart,
-  Settings,
-  Target,
-  Wallet,
-  Landmark,
+  Bell, CreditCard, Home, PieChart, Settings,
+  Target, Wallet, Landmark, Sun, Moon,
 } from "lucide-react";
 import api from "../../utils/api";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import "./Navbar.css";
 import { FaSignOutAlt } from "react-icons/fa";
 
@@ -26,6 +21,7 @@ const navItems = [
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { theme, toggle } = useTheme();
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
   const userDropdownRef = useRef(null);
@@ -139,6 +135,11 @@ export default function Navbar() {
       </nav>
 
       <div className="navbar-user">
+        {/* Dark mode toggle */}
+        <button className="theme-toggle-btn" onClick={toggle} title={theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}>
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+
         <div
           className="notification-wrap"
           onMouseEnter={openNotifications}
