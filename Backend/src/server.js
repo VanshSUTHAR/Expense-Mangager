@@ -18,7 +18,15 @@ const app = express();
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || /^http:\/\/localhost(:\d+)?$/.test(origin)) {
+    const allowedOrigins = [
+      /^http:\/\/localhost(:\d+)?$/,
+      /^https:\/\/.*\.vercel\.app$/,
+      process.env.FRONTEND_URL
+    ].filter(Boolean);
+    
+    if (!origin || allowedOrigins.some(allowed => 
+      typeof allowed === 'string' ? origin === allowed : allowed.test(origin)
+    )) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -44,8 +52,13 @@ app.get('/', (req, res) =>
   })
 );
 
-const PORT = process.env.PORT || 5000;
+// Export app for Vercel serverless functions
+module.exports = app;
 
-app.listen(PORT, () =>
-  console.log(`${FaRocket.name} Server running on port ${PORT}`)
-);
+// Start server locally if not in serverless environment
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () =>
+    console.log(`${FaRocket.name} Server running on port ${PORT}`)
+  );
+}
