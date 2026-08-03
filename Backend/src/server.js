@@ -12,8 +12,6 @@ const debitCardRoutes = require('./routes/debitCard.routes');
 // React Icons
 const { FaMoneyBillWave, FaRocket } = require('react-icons/fa');
 
-connectDB();
-
 const app = express();
 
 const allowedOrigins = [
@@ -61,10 +59,18 @@ app.get('/', (req, res) =>
 // Export app for Vercel serverless functions
 module.exports = app;
 
-// Start server locally if not in serverless environment
-if (process.env.NODE_ENV !== 'production') {
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () =>
-    console.log(`${FaRocket.name} Server running on port ${PORT}`)
-  );
-}
+const startServer = async () => {
+  await connectDB();
+
+  if (process.env.NODE_ENV !== 'production') {
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () =>
+      console.log(`${FaRocket.name} Server running on port ${PORT}`)
+    );
+  }
+};
+
+startServer().catch((error) => {
+  console.error('Failed to start server:', error);
+  process.exit(1);
+});
