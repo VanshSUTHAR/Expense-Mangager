@@ -3,11 +3,11 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "dev:backend": "npm run dev --prefix Backend",
-    "dev:frontend": "npm run dev --prefix Frontend",
-    "dev": "concurrently \"npm:dev:backend\" \"npm:dev:frontend\"",
-    "build:frontend": "npm run build --prefix Frontend",
-    "build": "npm run build:frontend"
+    "dev:backend": "node init && npm run dev --prefix Backend",
+    "dev:frontend": "node init && npm run dev --prefix Frontend",
+    "dev": "node init && concurrently \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "build:frontend": "node init && npm run build --prefix Frontend",
+    "build": "node init && npm run build:frontend"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
